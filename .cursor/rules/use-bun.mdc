@@ -1,0 +1,13 @@
+---
+description: Use Bun for package management and scripts in this monorepo
+alwaysApply: true
+---
+
+# Package manager: Bun
+
+- Install and resolve packages with **`bun install`**, not npm/yarn/pnpm.
+- Run scripts with **`bun run …`**, workspace targets with **`bun --filter @scope/pkg …`**.
+- Run one-off CLIs with **`bunx …`** instead of **`npx …`** when possible.
+- To check a package on the registry, prefer **`bun info <pkg>`** over npm view.
+
+The root `package.json` pins Bun via `packageManager`.

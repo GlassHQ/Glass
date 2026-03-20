@@ -1,0 +1,38 @@
+# Dependencies
+node_modules
+
+# Build
+dist
+dist-ssr
+.next
+out
+coverage
+*.local
+
+# Vercel
+.vercel
+
+# Turbo
+.turbo
+
+# Env
+.env
+.env*.local
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+
+# IDE
+.idea
+.vscode/*
+!.vscode/extensions.json
+
+# TypeScript
+*.tsbuildinfo
+
+# Vite
+.vite
