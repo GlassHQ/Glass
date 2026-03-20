@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import '@glass/ui/tokens.css'
 import '../index.css'
+import { AppLayout } from './AppLayout'
 
 export const metadata: Metadata = {
   title: 'Glass — Join the waitlist',
@@ -18,7 +19,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <AppLayout>{children}</AppLayout>
+      </body>
     </html>
   )
 }
