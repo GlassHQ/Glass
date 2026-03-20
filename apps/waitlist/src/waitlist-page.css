@@ -928,6 +928,48 @@ body {
   z-index: 10;
 }
 
+/* Holo / iOS WebKit: sharp rects behind rounded card (filters, blend, scale + preserve-3d).
+   Narrow viewports only so desktop layout and glow stay unchanged. */
+@media (max-width: 480px) {
+  .theme-holo .holo-card-wrap {
+    perspective: none;
+  }
+
+  .theme-holo .holo-card {
+    transform-style: flat;
+    isolation: isolate;
+  }
+
+  .theme-holo .holo-card .hc-bg,
+  .theme-holo .holo-card .hc-stars,
+  .theme-holo .holo-card .hc-particles,
+  .theme-holo .holo-card .hc-holo,
+  .theme-holo .holo-card .hc-scan,
+  .theme-holo .holo-card .hc-shimmer {
+    border-radius: inherit;
+  }
+
+  .theme-holo .holo-card .hc-bg,
+  .theme-holo .holo-card .hc-stars,
+  .theme-holo .holo-card .hc-particles,
+  .theme-holo .holo-card .hc-scan,
+  .theme-holo .holo-card .hc-shimmer {
+    transform: translateZ(0);
+  }
+
+  /* scale(1.02) in energyPulse often defeats overflow-radius clipping on iOS */
+  .theme-holo .holo-card .hc-particles {
+    animation: none;
+    opacity: 0.82;
+  }
+
+  .theme-holo .holo-card .hc-form-area {
+    border-bottom-left-radius: 20px;
+    border-bottom-right-radius: 20px;
+    overflow: hidden;
+  }
+}
+
 .hc-tagline {
   font-family: var(--mono);
   font-size: 9px;
