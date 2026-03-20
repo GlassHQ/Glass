@@ -1,0 +1,55 @@
+/**
+ * Design tokens distilled from REFERENCES/glass-app.html, glass-waitlist.html,
+ * glass-explore.html — DM Serif Display + DM Mono, ice accent, dark/light surfaces.
+ */
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&display=swap');
+
+:root {
+  --glass-font-serif: 'DM Serif Display', serif;
+  --glass-font-mono: 'DM Mono', monospace;
+
+  --glass-bg: #09090f;
+  --glass-bg-elevated: #0e0e16;
+  --glass-surface-light: #f0eff8;
+
+  --glass-text: #dddde8;
+  --glass-text-secondary: #7878a0;
+  --glass-text-tertiary: #404060;
+
+  --glass-ice: #9bb8ff;
+  --glass-ice-hover: #b8ccff;
+  --glass-ice-2: #5a7fd4;
+  --glass-ice-dim: rgba(155, 184, 255, 0.08);
+  --glass-ice-dim-2: rgba(155, 184, 255, 0.14);
+  --glass-ice-border: rgba(155, 184, 255, 0.25);
+  --glass-ice-border-strong: rgba(155, 184, 255, 0.45);
+
+  --glass-on-ice: #060614;
+  --glass-inverse-bg: #09090f;
+  --glass-inverse-text: #f0eff8;
+
+  --glass-green: #6bdb9e;
+  --glass-line: rgba(255, 255, 255, 0.055);
+}
+
+/**
+ * Light theme (waitlist / explore light quadrants)
+ */
+.glass-theme-light {
+  --glass-bg: #f0eff8;
+  --glass-bg-elevated: #ffffff;
+  --glass-text: #09090f;
+  --glass-text-secondary: rgba(0, 0, 0, 0.55);
+  --glass-text-tertiary: rgba(0, 0, 0, 0.4);
+  --glass-ice-border: rgba(0, 0, 0, 0.12);
+  --glass-line: rgba(0, 0, 0, 0.08);
+}
+
+.glass-canvas {
+  font-family: var(--glass-font-mono);
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--glass-text);
+  background: var(--glass-bg);
+  -webkit-font-smoothing: antialiased;
+}

@@ -1,0 +1,96 @@
+.base {
+  font-family: var(--glass-font-mono);
+  cursor: pointer;
+  border: none;
+  margin: 0;
+  text-decoration: none;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease,
+    box-shadow 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
+}
+
+.base:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Hero / app primary — glass-app .btn-cta */
+.cta {
+  composes: base;
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  font-weight: 500;
+  padding: 11px 26px;
+  background: var(--glass-ice);
+  color: var(--glass-on-ice);
+}
+
+.cta:hover:not(:disabled) {
+  background: var(--glass-ice-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 30px rgba(155, 184, 255, 0.2);
+}
+
+/* Waitlist form submit — glass-waitlist .btn (dark theme) */
+.submit {
+  composes: base;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  padding: 13px 22px;
+  background: var(--glass-ice);
+  color: var(--glass-on-ice);
+  white-space: nowrap;
+}
+
+.submit:hover:not(:disabled) {
+  background: var(--glass-ice-hover);
+}
+
+/* Solid for light canvas — glass-waitlist .theme-light .btn */
+.inverse {
+  composes: base;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  padding: 13px 22px;
+  background: var(--glass-inverse-bg);
+  color: var(--glass-inverse-text);
+  white-space: nowrap;
+}
+
+.inverse:hover:not(:disabled) {
+  background: #1a1a2e;
+}
+
+/* Nav — glass-app .nav-btn */
+.outline {
+  composes: base;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  padding: 7px 18px;
+  color: var(--glass-ice);
+  border: 1px solid var(--glass-ice-border);
+  background: var(--glass-ice-dim);
+}
+
+.outline:hover:not(:disabled) {
+  background: var(--glass-ice-dim-2);
+  border-color: var(--glass-ice-border-strong);
+  color: #c0d4ff;
+}
+
+/* Text link CTA — glass-app .btn-text */
+.text {
+  composes: base;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  padding: 11px 4px;
+  color: var(--glass-text-tertiary);
+  background: transparent;
+  border-bottom: 1px solid transparent;
+  border-radius: 0;
+}
+
+.text:hover:not(:disabled) {
+  color: var(--glass-text-secondary);
+  border-bottom-color: var(--glass-text-tertiary);
+}
