@@ -11,5 +11,8 @@
   },
   "devDependencies": {
     "turbo": "^2.4.4"
+  },
+  "dependencies": {
+    "@databuddy/sdk": "^2.3.29"
   }
 }
