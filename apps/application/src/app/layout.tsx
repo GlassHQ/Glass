@@ -17,7 +17,13 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <div className="application-shell">{children}</div>
-        <Databuddy clientId="e5cb7775-b6f4-4586-9720-bdf6207a8302" />
+        <Databuddy
+          clientId="e5cb7775-b6f4-4586-9720-bdf6207a8302"
+          trackAttributes
+          trackOutgoingLinks
+          trackInteractions
+          trackScrollDepth
+        />
       </body>
     </html>
   )
