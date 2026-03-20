@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Glass — Logo Exploration</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --serif: 'DM Serif Display', serif;
+  --mono:  'DM Mono', monospace;
+}
+
+html, body { height: 100%; overflow: hidden; }
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  width: 100vw;
+  height: 100vh;
+}
+
+/* ── SHARED WORDMARK ── */
+.wordmark {
+  font-family: var(--serif);
+  font-size: clamp(60px, 7vw, 120px);
+  font-weight: 400;
+  font-style: italic;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  padding: 4px 8px;
+  animation: rise 0.7s 0.1s ease forwards;
+  opacity: 0;
+}
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.quad {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+/* thin dividing lines */
+.quad::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* ════════════════════════════
+   Q1 — TOP LEFT: Original dark
+════════════════════════════ */
+.q1 {
+  background: #09090f;
+  border-right: 1px solid rgba(255,255,255,0.07);
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+}
+
+.q1::before {
+  content: '';
+  position: absolute; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  background-size: 200px;
+  pointer-events: none;
+}
+
+.q1 .glow {
+  position: absolute;
+  top: -20%; left: 50%; transform: translateX(-50%);
+  width: 80%; height: 60%;
+  background: radial-gradient(ellipse at top, rgba(155,184,255,0.05) 0%, transparent 65%);
+  pointer-events: none;
+}
+
+.q1 .wordmark {
+  color: #dddde8;
+  position: relative;
+  z-index: 1;
+  animation-delay: 0.1s;
+}
+
+/* ════════════════════════════
+   Q2 — TOP RIGHT: Inverse
+════════════════════════════ */
+.q2 {
+  background: #f0eff8;
+  border-bottom: 1px solid rgba(0,0,0,0.08);
+}
+
+.q2::before {
+  content: '';
+  position: absolute; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");
+  background-size: 200px;
+  pointer-events: none;
+}
+
+.q2 .glow {
+  position: absolute;
+  bottom: -10%; left: 50%; transform: translateX(-50%);
+  width: 80%; height: 60%;
+  background: radial-gradient(ellipse at bottom, rgba(90,127,212,0.06) 0%, transparent 65%);
+  pointer-events: none;
+}
+
+.q2 .wordmark {
+  color: #09090f;
+  position: relative;
+  z-index: 1;
+  animation-delay: 0.2s;
+}
+
+/* ════════════════════════════
+   Q3 — BOTTOM LEFT: Pokémon Card
+════════════════════════════ */
+.q3 {
+  background: #0a0812;
+  border-right: 1px solid rgba(255,255,255,0.07);
+  cursor: none;
+}
+
+/* card border glow */
+.q3-card {
+  position: relative;
+  width: 72%;
+  height: 82%;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow:
+    0 0 0 2px rgba(255,255,255,0.12),
+    0 0 30px rgba(180,100,255,0.4),
+    0 0 80px rgba(100,180,255,0.25),
+    0 30px 60px rgba(0,0,0,0.8);
+  z-index: 2;
+  transform-style: preserve-3d;
+  transition: transform 0.1s ease;
+}
+
+/* base card background */
+.q3-card-bg {
+  position: absolute; inset: 0;
+  background: linear-gradient(145deg, #1a1040 0%, #0d1a2e 40%, #1a0d2e 70%, #0a1520 100%);
+  border-radius: 14px;
+}
+
+/* star field */
+.q3-stars {
+  position: absolute; inset: 0;
+  border-radius: 14px;
+  background-image:
+    radial-gradient(1px 1px at 15% 20%, rgba(255,255,255,0.9) 0%, transparent 100%),
+    radial-gradient(1px 1px at 35% 8%, rgba(255,255,255,0.7) 0%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 55% 15%, rgba(255,255,255,0.8) 0%, transparent 100%),
+    radial-gradient(1px 1px at 72% 25%, rgba(255,255,255,0.6) 0%, transparent 100%),
+    radial-gradient(1px 1px at 88% 12%, rgba(255,255,255,0.9) 0%, transparent 100%),
+    radial-gradient(1px 1px at 25% 40%, rgba(255,255,255,0.5) 0%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 45% 55%, rgba(255,255,255,0.7) 0%, transparent 100%),
+    radial-gradient(1px 1px at 65% 45%, rgba(255,255,255,0.6) 0%, transparent 100%),
+    radial-gradient(1px 1px at 82% 60%, rgba(255,255,255,0.8) 0%, transparent 100%),
+    radial-gradient(1px 1px at 10% 70%, rgba(255,255,255,0.5) 0%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 30% 80%, rgba(255,255,255,0.7) 0%, transparent 100%),
+    radial-gradient(1px 1px at 50% 88%, rgba(255,255,255,0.4) 0%, transparent 100%),
+    radial-gradient(1px 1px at 70% 75%, rgba(255,255,255,0.6) 0%, transparent 100%),
+    radial-gradient(1px 1px at 90% 85%, rgba(255,255,255,0.5) 0%, transparent 100%),
+    radial-gradient(2px 2px at 20% 55%, rgba(180,140,255,0.8) 0%, transparent 100%),
+    radial-gradient(2px 2px at 60% 30%, rgba(140,200,255,0.7) 0%, transparent 100%),
+    radial-gradient(2px 2px at 80% 50%, rgba(255,180,140,0.6) 0%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 5% 45%, rgba(255,255,255,0.4) 0%, transparent 100%),
+    radial-gradient(1px 1px at 95% 35%, rgba(255,255,255,0.6) 0%, transparent 100%),
+    radial-gradient(1px 1px at 40% 92%, rgba(255,255,255,0.3) 0%, transparent 100%);
+}
+
+/* energy border frame */
+.q3-frame {
+  position: absolute; inset: 8px;
+  border: 1.5px solid rgba(255,255,255,0.12);
+  border-radius: 10px;
+  box-shadow: inset 0 0 20px rgba(140,100,255,0.1);
+}
+
+/* holographic prismatic layer */
+.q3-holo {
+  position: absolute; inset: 0;
+  border-radius: 14px;
+  background: linear-gradient(
+    125deg,
+    rgba(255,0,128,0) 0%,
+    rgba(255,100,0,0.15) 10%,
+    rgba(255,220,0,0.2) 20%,
+    rgba(0,255,100,0.15) 30%,
+    rgba(0,200,255,0.2) 40%,
+    rgba(100,0,255,0.15) 50%,
+    rgba(255,0,200,0.2) 60%,
+    rgba(255,100,0,0.15) 70%,
+    rgba(255,220,0,0.1) 80%,
+    rgba(0,255,150,0.15) 90%,
+    rgba(0,180,255,0) 100%
+  );
+  background-size: 300% 300%;
+  animation: holoShift 6s ease infinite;
+  mix-blend-mode: screen;
+  opacity: 0.8;
+}
+
+@keyframes holoShift {
+  0%   { background-position: 0% 0%; }
+  25%  { background-position: 100% 0%; }
+  50%  { background-position: 100% 100%; }
+  75%  { background-position: 0% 100%; }
+  100% { background-position: 0% 0%; }
+}
+
+/* scanlines */
+.q3-scan {
+  position: absolute; inset: 0;
+  border-radius: 14px;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 3px,
+    rgba(0,0,0,0.08) 3px,
+    rgba(0,0,0,0.08) 4px
+  );
+  pointer-events: none;
+}
+
+/* shimmer sweep */
+.q3-shimmer {
+  position: absolute; inset: 0;
+  border-radius: 14px;
+  background: linear-gradient(
+    105deg,
+    transparent 30%,
+    rgba(255,255,255,0.08) 45%,
+    rgba(255,255,255,0.18) 50%,
+    rgba(255,255,255,0.08) 55%,
+    transparent 70%
+  );
+  background-size: 200% 100%;
+  animation: shimmerSweep 3s ease-in-out infinite;
+}
+
+@keyframes shimmerSweep {
+  0%   { background-position: -100% 0; }
+  60%  { background-position: 200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* energy particles */
+.q3-particles {
+  position: absolute; inset: 0;
+  border-radius: 14px;
+  background:
+    radial-gradient(circle at 30% 70%, rgba(180,80,255,0.3) 0%, transparent 25%),
+    radial-gradient(circle at 70% 30%, rgba(80,180,255,0.25) 0%, transparent 25%),
+    radial-gradient(circle at 50% 50%, rgba(255,160,80,0.1) 0%, transparent 40%);
+  animation: energyPulse 4s ease-in-out infinite alternate;
+}
+
+@keyframes energyPulse {
+  0%   { opacity: 0.6; transform: scale(1); }
+  100% { opacity: 1; transform: scale(1.02); }
+}
+
+/* the wordmark on the card */
+.q3-wordmark {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  white-space: nowrap;
+  font-family: var(--serif);
+  font-size: clamp(36px, 4.5vw, 72px);
+  font-weight: 400;
+  font-style: italic;
+  letter-spacing: -0.02em;
+  color: transparent;
+  background: linear-gradient(
+    160deg,
+    #ffffff 0%,
+    #e0c8ff 20%,
+    #9bb8ff 40%,
+    #ffffff 55%,
+    #ffd680 70%,
+    #ff9bb8 85%,
+    #c8b0ff 100%
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: foilText 3s linear infinite;
+  filter: drop-shadow(0 0 12px rgba(180,140,255,0.8)) drop-shadow(0 0 30px rgba(100,160,255,0.5));
+  z-index: 10;
+}
+
+@keyframes foilText {
+  0%   { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+
+/* HP / card detail badges */
+.q3-hp {
+  position: absolute;
+  top: 14px; right: 18px;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: rgba(255,255,255,0.5);
+  letter-spacing: 0.1em;
+  z-index: 10;
+}
+
+.q3-type {
+  position: absolute;
+  top: 14px; left: 18px;
+  font-family: var(--mono);
+  font-size: 9px;
+  color: rgba(155,184,255,0.7);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  z-index: 10;
+}
+
+.q3-serial {
+  position: absolute;
+  bottom: 10px; right: 16px;
+  font-family: var(--mono);
+  font-size: 8px;
+  color: rgba(255,255,255,0.2);
+  letter-spacing: 0.08em;
+  z-index: 10;
+}
+
+.q3-rarity {
+  position: absolute;
+  bottom: 10px; left: 50%; transform: translateX(-50%);
+  display: flex; gap: 4px;
+  z-index: 10;
+}
+
+.q3-star {
+  width: 8px; height: 8px;
+  background: linear-gradient(135deg, #ffd700, #ffaa00);
+  clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+  filter: drop-shadow(0 0 3px rgba(255,200,0,0.8));
+}
+
+/* mouse-tracking tilt handled in JS */
+
+/* ════════════════════════════
+   Q4 — BOTTOM RIGHT: Foil
+   Jet black, wordmark as
+   holographic foil — rainbow
+   gradient at a sharp angle
+════════════════════════════ */
+.q4 {
+  background: #080608;
+}
+
+.q4::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse at 50% 50%, rgba(255,255,255,0.02) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.q4 .wordmark {
+  font-size: clamp(60px, 7vw, 120px);
+  color: transparent;
+  background: linear-gradient(
+    105deg,
+    #ff6ec4 0%,
+    #ff9d4d 12%,
+    #ffe566 24%,
+    #6bdb9e 36%,
+    #4dd9f0 48%,
+    #9bb8ff 60%,
+    #c97bff 72%,
+    #ff6ec4 84%,
+    #ff9d4d 100%
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  position: relative;
+  z-index: 1;
+  animation: foil 4s linear infinite, rise 0.9s ease forwards;
+  animation-delay: 0s, 0.4s;
+  filter: drop-shadow(0 0 30px rgba(155,184,255,0.2));
+}
+
+@keyframes foil {
+  0%   { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+
+/* small label tags */
+.label {
+  position: absolute;
+  bottom: 16px;
+  left: 20px;
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: 0.3;
+  z-index: 10;
+}
+
+.q2 .label { color: #000; opacity: 0.6; }
+.q2 .wordmark { color: #000000; }
+</style>
+</head>
+<body>
+
+<div class="grid">
+
+  <!-- Q1: Original -->
+  <div class="quad q1">
+    <div class="glow"></div>
+    <span class="wordmark">Glass</span>
+    <span class="label">Dark</span>
+  </div>
+
+  <!-- Q2: Inverse -->
+  <div class="quad q2">
+    <div class="glow"></div>
+    <span class="wordmark">Glass</span>
+    <span class="label">Light</span>
+  </div>
+
+  <!-- Q3: Pokémon Card -->
+  <div class="quad q3" id="q3">
+    <div class="q3-card" id="q3-card">
+      <div class="q3-card-bg"></div>
+      <div class="q3-stars"></div>
+      <div class="q3-particles"></div>
+      <div class="q3-holo"></div>
+      <div class="q3-shimmer"></div>
+      <div class="q3-scan"></div>
+      <div class="q3-frame"></div>
+      <div class="q3-type">Ultra Rare</div>
+      <div class="q3-hp">∞ HP</div>
+      <div class="q3-wordmark">Glass</div>
+      <div class="q3-serial">001 / 001</div>
+    </div>
+    <span class="label">Holographic</span>
+  </div>
+
+  <!-- Q4: Foil -->
+  <div class="quad q4">
+    <span class="wordmark">Glass</span>
+    <span class="label">Foil</span>
+  </div>
+
+</div>
+
+<script>
+const q3 = document.getElementById('q3');
+const card = document.getElementById('q3-card');
+const holo = card.querySelector('.q3-holo');
+
+q3.addEventListener('mousemove', e => {
+  const rect = q3.getBoundingClientRect();
+  const x = (e.clientX - rect.left) / rect.width;
+  const y = (e.clientY - rect.top) / rect.height;
+  const rotX = (y - 0.5) * -22;
+  const rotY = (x - 0.5) * 22;
+  card.style.transform = `perspective(800px) rotateX(${rotX}deg) rotateY(${rotY}deg) scale(1.04)`;
+  holo.style.backgroundPosition = `${x * 100}% ${y * 100}%`;
+});
+
+q3.addEventListener('mouseleave', () => {
+  card.style.transform = 'perspective(800px) rotateX(0deg) rotateY(0deg) scale(1)';
+});
+</script>
+</body>
+</html>

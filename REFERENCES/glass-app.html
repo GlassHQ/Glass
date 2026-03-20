@@ -1,0 +1,2062 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Glass — Test suite intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:       #09090f;
+  --bg1:      #0e0e16;
+  --bg2:      #13131d;
+  --bg3:      #1a1a26;
+  --bg4:      #222230;
+  --line:     rgba(255,255,255,0.055);
+  --line2:    rgba(255,255,255,0.1);
+  --text:     #dddde8;
+  --text2:    #7878a0;
+  --text3:    #404060;
+  --ice:      #9bb8ff;
+  --ice2:     #5a7fd4;
+  --ice-dim:  rgba(155,184,255,0.08);
+  --ice-dim2: rgba(155,184,255,0.14);
+  --red:      #ff6b6b;
+  --red-dim:  rgba(255,107,107,0.1);
+  --amber:    #ffb347;
+  --amber-dim:rgba(255,179,71,0.1);
+  --green:    #6bdb9e;
+  --green-dim:rgba(107,219,158,0.1);
+  --serif: 'DM Serif Display', serif;
+  --mono:  'DM Mono', monospace;
+}
+
+html {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+body { overflow-x: hidden; }
+a { text-decoration: none; }
+
+/* ─── NAV ─── */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 2.5rem;
+  height: 56px;
+  background: rgba(9,9,15,0.9);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--line);
+}
+
+.logo {
+  font-family: var(--serif);
+  font-size: 18px;
+  color: var(--text);
+  letter-spacing: 0.01em;
+  font-style: italic;
+}
+
+.logo sup {
+  font-family: var(--mono);
+  font-size: 9px;
+  font-style: normal;
+  color: var(--ice);
+  letter-spacing: 0.06em;
+  vertical-align: super;
+  margin-left: 2px;
+}
+
+.nav-links {
+  display: flex; gap: 2rem; list-style: none;
+}
+
+.nav-links a {
+  font-size: 11px;
+  color: var(--text3);
+  letter-spacing: 0.05em;
+  transition: color 0.2s;
+}
+
+.nav-links a:hover { color: var(--text2); }
+
+.nav-btn {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--ice);
+  padding: 7px 18px;
+  border: 1px solid rgba(155,184,255,0.25);
+  background: var(--ice-dim);
+  transition: all 0.2s;
+}
+
+.nav-btn:hover {
+  background: var(--ice-dim2);
+  border-color: rgba(155,184,255,0.45);
+  color: #c0d4ff;
+}
+
+/* ─── HERO ─── */
+.hero {
+  padding-top: 56px;
+  min-height: 100vh;
+  display: flex;
+  align-items: stretch;
+  position: relative;
+  overflow: hidden;
+}
+
+/* subtle noise layer */
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  background-size: 200px;
+  pointer-events: none;
+  opacity: 0.4;
+}
+
+/* very faint radial */
+.hero::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 50%;
+  transform: translateX(-50%);
+  width: 900px; height: 500px;
+  background: radial-gradient(ellipse at top, rgba(155,184,255,0.04) 0%, transparent 65%);
+  pointer-events: none;
+}
+
+.hero-inner {
+  position: relative; z-index: 2;
+  display: grid;
+  grid-template-columns: 1fr 520px;
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 2.5rem;
+  align-items: center;
+  gap: 5rem;
+}
+
+.hero-left { padding: 5rem 0; }
+
+h1 {
+  font-family: var(--serif);
+  font-size: clamp(44px, 5vw, 68px);
+  font-weight: 400;
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  margin-bottom: 2rem;
+  opacity: 0;
+  animation: rise 0.7s 0.1s ease forwards;
+}
+
+h1 .accent { color: var(--ice); font-style: italic; }
+
+.hero-body {
+  font-size: 14px;
+  color: var(--text2);
+  line-height: 1.85;
+  max-width: 420px;
+  margin-bottom: 2.5rem;
+  font-weight: 300;
+  opacity: 0;
+  animation: rise 0.7s 0.3s ease forwards;
+}
+
+.hero-ctas {
+  display: flex; gap: 12px; align-items: center;
+  opacity: 0;
+  animation: rise 0.7s 0.4s ease forwards;
+}
+
+.btn-cta {
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  padding: 11px 26px;
+  background: var(--ice);
+  color: #060614;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.btn-cta:hover { background: #b8ccff; transform: translateY(-1px); box-shadow: 0 6px 30px rgba(155,184,255,0.2); }
+
+.btn-text {
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: var(--text3);
+  padding: 11px 4px;
+  border-bottom: 1px solid transparent;
+  transition: all 0.2s;
+}
+
+.btn-text:hover { color: var(--text2); border-bottom-color: var(--text3); }
+
+.hero-proof {
+  margin-top: 3rem;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  opacity: 0;
+  animation: rise 0.7s 0.5s ease forwards;
+}
+
+.proof-item {
+  font-size: 10px;
+  color: var(--text3);
+  letter-spacing: 0.06em;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.proof-dot { width: 3px; height: 3px; border-radius: 50%; background: var(--text3); }
+
+/* REPORT PANEL */
+.hero-right {
+  opacity: 0;
+  animation: rise 0.8s 0.45s ease forwards;
+  padding: 5rem 0;
+}
+
+.report-panel {
+  background: var(--bg1);
+  border: 1px solid var(--line2);
+  overflow: hidden;
+  box-shadow: 0 40px 120px rgba(0,0,0,0.6), 0 0 0 1px var(--line);
+  border-radius: 2px;
+}
+
+.rp-bar {
+  background: var(--bg2);
+  border-bottom: 1px solid var(--line);
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.rp-dots { display: flex; gap: 5px; }
+.rp-dot { width: 9px; height: 9px; border-radius: 50%; }
+.rp-dot:nth-child(1) { background: #3a3a4a; }
+.rp-dot:nth-child(2) { background: #3a3a4a; }
+.rp-dot:nth-child(3) { background: #3a3a4a; }
+
+.rp-title {
+  font-size: 10px;
+  color: var(--text3);
+  letter-spacing: 0.06em;
+}
+
+.rp-badge {
+  font-size: 10px;
+  color: var(--amber);
+  letter-spacing: 0.04em;
+  padding: 2px 8px;
+  border: 1px solid rgba(255,179,71,0.2);
+  background: var(--amber-dim);
+}
+
+.rp-score {
+  display: grid;
+  grid-template-columns: repeat(4,1fr);
+  border-bottom: 1px solid var(--line);
+}
+
+.rp-score-cell {
+  padding: 1rem 1.25rem;
+  border-right: 1px solid var(--line);
+}
+
+.rp-score-cell:last-child { border-right: none; }
+.sc-label { font-size: 9px; letter-spacing: 0.08em; color: var(--text3); margin-bottom: 4px; text-transform: uppercase; }
+.sc-val { font-family: var(--serif); font-size: 22px; color: var(--text); }
+.sc-val.r { color: var(--red); }
+.sc-val.a { color: var(--amber); }
+.sc-val.g { color: var(--green); }
+
+.rp-rows { padding: 12px; display: flex; flex-direction: column; gap: 2px; }
+
+.rp-row {
+  display: grid;
+  grid-template-columns: 40px 1fr 90px;
+  gap: 10px;
+  padding: 9px 10px;
+  align-items: start;
+  transition: background 0.15s;
+}
+
+.rp-row:hover { background: var(--bg2); }
+
+.rp-sev {
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  font-weight: 500;
+  padding-top: 2px;
+  text-transform: uppercase;
+}
+
+.sev-f { color: var(--red); }
+.sev-w { color: var(--amber); }
+.sev-p { color: var(--green); }
+
+.rp-msg { font-size: 11px; color: var(--text2); line-height: 1.5; }
+.rp-msg b { color: var(--text); font-weight: 400; }
+.rp-file { font-size: 10px; color: var(--text3); text-align: right; padding-top: 2px; }
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── DIVIDER ─── */
+hr { border: none; border-top: 1px solid var(--line); }
+
+/* ─── SECTION ─── */
+.sec { padding: 7rem 2.5rem; max-width: 1280px; margin: 0 auto; }
+
+.sec-label {
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ice2);
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sec-label::before { content: ''; width: 20px; height: 1px; background: var(--ice2); }
+
+h2 {
+  font-family: var(--serif);
+  font-size: clamp(30px, 3.5vw, 48px);
+  font-weight: 400;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  margin-bottom: 1.25rem;
+}
+
+h2 em { font-style: italic; color: var(--ice); }
+
+.sec-sub {
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.85;
+  max-width: 500px;
+  font-weight: 300;
+}
+
+/* ─── PROBLEM ─── */
+.problem-wrap { margin-top: 4rem; }
+
+.problem-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+}
+
+.prob-card {
+  background: var(--bg);
+  padding: 2.5rem;
+  transition: background 0.2s;
+}
+
+.prob-card:hover { background: var(--bg1); }
+
+.prob-marker {
+  width: 28px; height: 2px;
+  background: var(--red);
+  margin-bottom: 1.5rem;
+  transition: width 0.3s;
+}
+
+.prob-card:hover .prob-marker { width: 48px; }
+
+.prob-tag {
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--red);
+  margin-bottom: 0.75rem;
+}
+
+.prob-card h3 {
+  font-family: var(--serif);
+  font-size: 18px;
+  font-weight: 400;
+  color: var(--text);
+  line-height: 1.35;
+  margin-bottom: 0.9rem;
+}
+
+.prob-card p {
+  font-size: 12px;
+  color: var(--text2);
+  line-height: 1.85;
+  font-weight: 300;
+}
+
+/* ─── HOW IT WORKS ─── */
+.how-layout {
+  margin-top: 4rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5rem;
+  align-items: start;
+}
+
+.steps-list { display: flex; flex-direction: column; }
+
+.step-item {
+  display: flex;
+  gap: 1.5rem;
+  padding: 2rem 0;
+  border-bottom: 1px solid var(--line);
+  transition: background 0.15s;
+}
+
+.step-item:first-child { padding-top: 0; }
+.step-item:last-child { border-bottom: none; }
+
+.step-n {
+  font-family: var(--serif);
+  font-size: 13px;
+  font-style: italic;
+  color: var(--text3);
+  flex-shrink: 0;
+  width: 20px;
+  padding-top: 2px;
+  transition: color 0.2s;
+}
+
+.step-item:hover .step-n { color: var(--ice); }
+
+.step-body {}
+
+.step-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  margin-bottom: 0.5rem;
+  letter-spacing: 0.01em;
+}
+
+.step-desc {
+  font-size: 12px;
+  color: var(--text2);
+  line-height: 1.85;
+  font-weight: 300;
+  margin-bottom: 0.75rem;
+}
+
+.step-chip {
+  display: inline-block;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  color: var(--ice2);
+  padding: 3px 9px;
+  border: 1px solid rgba(155,184,255,0.18);
+  background: var(--ice-dim);
+}
+
+/* findings */
+.findings-box {
+  background: var(--bg1);
+  border: 1px solid var(--line2);
+  position: sticky;
+  top: 80px;
+}
+
+.fb-head {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.fb-head-label { font-size: 10px; color: var(--text3); letter-spacing: 0.06em; }
+.fb-fw { font-size: 10px; color: var(--ice2); padding: 2px 8px; border: 1px solid rgba(155,184,255,0.15); background: var(--ice-dim); }
+
+.fb-list { padding: 10px; display: flex; flex-direction: column; gap: 1px; }
+
+.fb-item {
+  display: grid;
+  grid-template-columns: 36px 1fr;
+  gap: 8px;
+  padding: 10px 8px;
+  transition: background 0.15s;
+}
+
+.fb-item:hover { background: var(--bg2); }
+
+.fb-sev {
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding-top: 2px;
+}
+
+.fb-f { color: var(--red); border-left: 1.5px solid var(--red); padding-left: 6px; }
+.fb-w { color: var(--amber); border-left: 1.5px solid var(--amber); padding-left: 6px; }
+.fb-p { color: var(--green); border-left: 1.5px solid var(--green); padding-left: 6px; }
+
+.fb-title { font-size: 11px; color: var(--text); margin-bottom: 3px; font-weight: 400; }
+.fb-detail { font-size: 10px; color: var(--text2); line-height: 1.6; font-weight: 300; }
+
+/* ─── PRICING ─── */
+.pricing-layout {
+  margin-top: 4rem;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+}
+
+.price-card {
+  background: var(--bg);
+  padding: 2.5rem;
+  display: flex;
+  flex-direction: column;
+  transition: background 0.2s;
+}
+
+.price-card:hover { background: var(--bg1); }
+
+.price-card.hi {
+  background: var(--bg1);
+  position: relative;
+}
+
+.price-card.hi::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--ice), transparent);
+}
+
+.pc-tier {
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text3);
+  margin-bottom: 1.75rem;
+  padding-bottom: 1.75rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.hi .pc-tier { color: var(--ice2); }
+
+.pc-name {
+  font-family: var(--serif);
+  font-size: 26px;
+  color: var(--text);
+  margin-bottom: 0.75rem;
+  font-style: italic;
+}
+
+.pc-desc {
+  font-size: 12px;
+  color: var(--text2);
+  line-height: 1.8;
+  font-weight: 300;
+  margin-bottom: 2rem;
+  flex-grow: 0;
+  min-height: 66px;
+}
+
+.pc-price {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  margin-bottom: 2rem;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.pc-amount {
+  font-family: var(--serif);
+  font-size: 36px;
+  color: var(--text);
+  line-height: 1;
+}
+
+.pc-per { font-size: 11px; color: var(--text3); }
+
+.pc-features {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 2.5rem;
+  flex: 1;
+}
+
+.pc-features li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 11px;
+  color: var(--text2);
+  line-height: 1.5;
+  font-weight: 300;
+}
+
+.pc-features li::before {
+  content: '·';
+  color: var(--text3);
+  flex-shrink: 0;
+  font-size: 14px;
+  line-height: 1.2;
+}
+
+.hi .pc-features li::before { color: var(--ice2); }
+
+.pc-btn {
+  display: block;
+  text-align: center;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.07em;
+  padding: 12px;
+  transition: all 0.2s;
+  cursor: pointer;
+  border: none;
+}
+
+.pc-btn-ghost {
+  color: var(--text3);
+  border: 1px solid var(--line2);
+  background: transparent;
+}
+
+.pc-btn-ghost:hover { color: var(--text); border-color: var(--line2); background: var(--bg2); }
+
+.pc-btn-main {
+  background: var(--ice);
+  color: #060614;
+  font-weight: 500;
+}
+
+.pc-btn-main:hover { background: #b8ccff; box-shadow: 0 4px 24px rgba(155,184,255,0.2); }
+
+/* ─── FOOTER ─── */
+footer {
+  border-top: 1px solid var(--line);
+  padding: 2rem 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 100%;
+}
+
+.footer-logo {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 16px;
+  color: var(--text3);
+}
+
+.footer-line { font-size: 10px; color: var(--text3); letter-spacing: 0.04em; }
+
+/* ─── RESPONSIVE ─── */
+@media (max-width: 960px) {
+  .hero-inner { grid-template-columns: 1fr; padding: 0 1.5rem; }
+  .hero-right { display: none; }
+  .sec { padding: 5rem 1.5rem; }
+  .problem-grid { grid-template-columns: 1fr; }
+  .how-layout { grid-template-columns: 1fr; gap: 3rem; }
+  .findings-box { position: static; display: none; }
+  .pricing-layout { grid-template-columns: 1fr; }
+  nav { padding: 0 1.5rem; }
+  .nav-links { display: none; }
+}
+
+/* ─── PAGE ROUTER ─── */
+.app-page { display: none; }
+.app-page.active { display: block; }
+
+/* ─── NAV ADDITIONS ─── */
+.nav-user {
+  display: none; align-items: center; gap: 10px;
+  font-size: 11px; color: var(--text3); letter-spacing: 0.04em;
+}
+.nav-user.visible { display: flex; }
+.nav-avatar {
+  width: 26px; height: 26px; border-radius: 50%;
+  background: var(--bg4); border: 1px solid var(--line2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; color: var(--ice); font-weight: 500;
+}
+
+/* ─── CONNECT PAGE ─── */
+.connect-wrap {
+  padding-top: 56px; min-height: 100vh;
+}
+.connect-inner {
+  max-width: 960px; margin: 0 auto;
+  padding: 4rem 2.5rem 6rem;
+}
+.connect-eyebrow {
+  font-size: 9px; letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--ice2); margin-bottom: 1rem;
+  display: flex; align-items: center; gap: 10px;
+}
+.connect-eyebrow::before { content: ''; width: 20px; height: 1px; background: var(--ice2); }
+.connect-title {
+  font-family: var(--serif); font-size: clamp(28px, 3vw, 42px);
+  font-weight: 400; line-height: 1.1; letter-spacing: -0.02em;
+  color: var(--text); margin-bottom: 0.75rem;
+}
+.connect-title em { font-style: italic; color: var(--ice); }
+.connect-sub { font-size: 13px; color: var(--text2); font-weight: 300; line-height: 1.7; max-width: 480px; margin-bottom: 3rem; }
+
+.steps-bar {
+  display: flex; align-items: center; margin-bottom: 3rem;
+  opacity: 0; animation: rise 0.6s 0.1s ease forwards;
+}
+.step-node { display: flex; align-items: center; gap: 10px; font-size: 11px; color: var(--text3); letter-spacing: 0.04em; }
+.step-node.done { color: var(--green); }
+.step-node.active { color: var(--text); }
+.step-circle {
+  width: 22px; height: 22px; border-radius: 50%;
+  border: 1px solid var(--text3);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; flex-shrink: 0; transition: all 0.3s;
+}
+.step-node.done .step-circle { border-color: var(--green); background: var(--green-dim); color: var(--green); }
+.step-node.active .step-circle { border-color: var(--ice); background: var(--ice-dim); color: var(--ice); }
+.step-line { width: 40px; height: 1px; background: var(--line2); margin: 0 8px; }
+.step-line.done { background: var(--green); opacity: 0.4; }
+
+.connect-layout {
+  display: grid; grid-template-columns: 1fr 300px; gap: 2rem; align-items: start;
+}
+
+.c-panel {
+  background: var(--bg1); border: 1px solid var(--line2); border-radius: 2px;
+  overflow: hidden; margin-bottom: 1rem;
+  opacity: 0; animation: rise 0.6s 0.15s ease forwards;
+}
+.c-panel-head {
+  background: var(--bg2); border-bottom: 1px solid var(--line);
+  padding: 11px 16px; display: flex; align-items: center; justify-content: space-between;
+}
+.c-panel-title { font-size: 11px; color: var(--text2); letter-spacing: 0.04em; }
+
+.gh-prompt { padding: 2.5rem 2rem; text-align: center; }
+.gh-icon {
+  width: 38px; height: 38px; border-radius: 50%;
+  background: var(--bg3); border: 1px solid var(--line2);
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 1.25rem; font-size: 16px; color: var(--text2);
+}
+.gh-prompt h3 { font-family: var(--serif); font-size: 17px; font-weight: 400; color: var(--text); margin-bottom: 0.4rem; }
+.gh-prompt p { font-size: 12px; color: var(--text2); line-height: 1.7; font-weight: 300; margin-bottom: 1.25rem; }
+.gh-connected { padding: 14px 16px; display: none; align-items: center; gap: 12px; }
+.gh-connected.visible { display: flex; }
+
+.btn-gh {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-family: var(--mono); font-size: 11px; letter-spacing: 0.05em;
+  padding: 9px 20px; background: var(--ice); color: #060614;
+  font-weight: 500; transition: all 0.2s; border: none; cursor: pointer;
+}
+.btn-gh:hover { background: #b8ccff; }
+
+.repo-search-row { padding: 11px 16px; border-bottom: 1px solid var(--line); display: none; }
+.repo-search-row.visible { display: block; }
+.repo-search {
+  width: 100%; background: var(--bg3); border: 1px solid var(--line);
+  color: var(--text); font-family: var(--mono); font-size: 12px;
+  padding: 7px 11px; outline: none; transition: border-color 0.2s;
+}
+.repo-search:focus { border-color: rgba(155,184,255,0.3); }
+.repo-search::placeholder { color: var(--text3); }
+
+.repo-list { display: none; }
+.repo-list.visible { display: block; }
+.repo-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 13px 16px; border-bottom: 1px solid var(--line);
+  cursor: pointer; transition: background 0.15s; gap: 12px;
+}
+.repo-item:last-child { border-bottom: none; }
+.repo-item:hover { background: var(--bg2); }
+.repo-item.selected { background: var(--ice-dim); }
+.repo-name { font-size: 12px; color: var(--text); margin-bottom: 2px; }
+.repo-meta { font-size: 10px; color: var(--text3); letter-spacing: 0.03em; }
+.repo-pick {
+  font-size: 10px; letter-spacing: 0.06em; color: var(--text3);
+  padding: 4px 10px; border: 1px solid var(--line); background: transparent;
+  transition: all 0.2s; flex-shrink: 0; font-family: var(--mono); cursor: pointer;
+}
+.repo-item:hover .repo-pick { color: var(--text2); border-color: var(--line2); }
+.repo-item.selected .repo-pick { color: var(--ice); border-color: rgba(155,184,255,0.3); background: var(--ice-dim); }
+
+.fw-row {
+  display: none; padding: 13px 16px; align-items: center;
+  justify-content: space-between; border-bottom: 1px solid var(--line); gap: 12px;
+}
+.fw-row.visible { display: flex; }
+.fw-label { font-size: 10px; color: var(--text3); letter-spacing: 0.06em; }
+.fw-detected { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--green); }
+.fw-pulse { width: 6px; height: 6px; border-radius: 50%; background: var(--green); position: relative; }
+.fw-pulse::after {
+  content: ''; position: absolute; inset: -3px; border-radius: 50%;
+  background: var(--green); animation: pulse-ring 1.5s ease-out infinite;
+}
+@keyframes pulse-ring {
+  0% { transform: scale(1); opacity: 0.6; }
+  100% { transform: scale(1.5); opacity: 0; }
+}
+
+.dir-row {
+  display: none; padding: 11px 16px; align-items: center; gap: 12px;
+  border-bottom: 1px solid var(--line);
+}
+.dir-row.visible { display: flex; }
+.dir-label { font-size: 10px; color: var(--text3); letter-spacing: 0.06em; white-space: nowrap; }
+.dir-input {
+  flex: 1; background: var(--bg3); border: 1px solid var(--line);
+  color: var(--text); font-family: var(--mono); font-size: 11px;
+  padding: 6px 10px; outline: none; transition: border-color 0.2s;
+}
+.dir-input:focus { border-color: rgba(155,184,255,0.3); }
+
+/* CONNECT SIDEBAR */
+.c-sidebar { opacity: 0; animation: rise 0.6s 0.2s ease forwards; }
+.c-sidebar .c-panel { opacity: 1; animation: none; }
+
+.sum-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 14px; border-bottom: 1px solid var(--line); gap: 8px;
+}
+.sum-row:last-child { border-bottom: none; }
+.sum-key { font-size: 10px; color: var(--text3); }
+.sum-val { font-size: 11px; color: var(--text); text-align: right; }
+.sum-val.empty { color: var(--text3); font-style: italic; }
+.sum-val.ok { color: var(--green); }
+
+.access-note {
+  padding: 12px 14px; background: var(--bg1);
+  border: 1px solid var(--line2); margin-bottom: 1rem;
+}
+.access-note p { font-size: 10px; color: var(--text3); line-height: 1.7; }
+.access-note strong { color: var(--text2); font-weight: 400; }
+
+.btn-run {
+  width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;
+  font-family: var(--mono); font-size: 12px; letter-spacing: 0.06em;
+  padding: 13px 24px; background: var(--ice); color: #060614; font-weight: 500;
+  transition: all 0.2s; border: none; cursor: pointer; position: relative; overflow: hidden;
+}
+.btn-run::before {
+  content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+  transition: left 0.4s;
+}
+.btn-run:hover::before { left: 100%; }
+.btn-run:hover { background: #b8ccff; box-shadow: 0 8px 32px rgba(155,184,255,0.2); }
+.btn-run:disabled { background: var(--bg4); color: var(--text3); cursor: not-allowed; box-shadow: none; }
+.btn-run:disabled::before { display: none; }
+.pay-note { margin-top: 0.75rem; font-size: 10px; color: var(--text3); text-align: center; letter-spacing: 0.03em; line-height: 1.6; }
+
+/* ─── PAYMENT MODAL ─── */
+.modal-overlay {
+  display: none; position: fixed; inset: 0; z-index: 200;
+  background: rgba(9,9,15,0.88); backdrop-filter: blur(8px);
+  align-items: center; justify-content: center;
+}
+.modal-overlay.open { display: flex; animation: fadeIn 0.2s ease; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.modal {
+  background: var(--bg1); border: 1px solid var(--line2);
+  width: 100%; max-width: 420px; margin: 1.5rem;
+  overflow: hidden; animation: rise 0.3s ease; border-radius: 2px;
+}
+.modal-head {
+  background: var(--bg2); border-bottom: 1px solid var(--line);
+  padding: 13px 18px; display: flex; align-items: center; justify-content: space-between;
+}
+.modal-head-title { font-size: 12px; color: var(--text); letter-spacing: 0.04em; }
+.modal-close { font-size: 14px; color: var(--text3); cursor: pointer; transition: color 0.2s; background: none; border: none; font-family: var(--mono); }
+.modal-close:hover { color: var(--text); }
+.modal-body { padding: 1.5rem; }
+.modal-order {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1rem; background: var(--bg2); border: 1px solid var(--line); margin-bottom: 1.25rem;
+}
+.order-name { font-size: 13px; color: var(--text); }
+.order-price { font-family: var(--serif); font-size: 22px; color: var(--text); }
+.f-label { display: block; font-size: 10px; color: var(--text3); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 0.4rem; }
+.f-input {
+  width: 100%; background: var(--bg3); border: 1px solid var(--line);
+  color: var(--text); font-family: var(--mono); font-size: 12px;
+  padding: 9px 12px; outline: none; transition: border-color 0.2s; margin-bottom: 1rem;
+}
+.f-input:focus { border-color: rgba(155,184,255,0.3); }
+.f-input::placeholder { color: var(--text3); }
+.f-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+.btn-pay {
+  width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;
+  font-family: var(--mono); font-size: 12px; letter-spacing: 0.06em;
+  padding: 13px; background: var(--ice); color: #060614; font-weight: 500;
+  transition: all 0.2s; border: none; cursor: pointer; margin-top: 1.25rem;
+}
+.btn-pay:hover { background: #b8ccff; }
+.stripe-note { font-size: 10px; color: var(--text3); text-align: center; margin-top: 0.75rem; line-height: 1.6; }
+
+/* ─── ANALYSIS OVERLAY ─── */
+.analysis-overlay {
+  display: none; position: fixed; inset: 0; z-index: 150;
+  background: var(--bg); flex-direction: column;
+  align-items: center; justify-content: center; gap: 2rem;
+}
+.analysis-overlay.open { display: flex; animation: fadeIn 0.4s ease; }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+.a-spinner { width: 38px; height: 38px; border: 2px solid var(--line2); border-top-color: var(--ice); border-radius: 50%; animation: spin 0.9s linear infinite; }
+.a-title { font-family: var(--serif); font-size: 22px; font-weight: 400; color: var(--text); letter-spacing: -0.01em; font-style: italic; }
+.a-steps { display: flex; flex-direction: column; width: 280px; }
+.a-step {
+  display: flex; align-items: center; gap: 12px;
+  padding: 9px 0; border-bottom: 1px solid var(--line);
+  font-size: 11px; color: var(--text3); opacity: 0.4; transition: all 0.4s;
+}
+.a-step:last-child { border-bottom: none; }
+.a-step.done { color: var(--green); opacity: 1; }
+.a-step.active { color: var(--text); opacity: 1; }
+.a-step-icon { font-size: 11px; width: 14px; text-align: center; }
+.a-bar { width: 280px; height: 2px; background: var(--line2); overflow: hidden; margin-top: 0.75rem; }
+.a-fill {
+  height: 100%; background: var(--ice); width: 0%; transition: width 0.5s ease;
+  position: relative; overflow: hidden;
+}
+@keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+.a-fill::after {
+  content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+  animation: shimmer 1.2s infinite;
+}
+
+/* ─── REPORT PAGE ─── */
+.report-wrap { padding-top: 56px; min-height: 100vh; }
+.report-inner { max-width: 1100px; margin: 0 auto; padding: 3.5rem 2.5rem 6rem; }
+
+.report-hd {
+  border-bottom: 1px solid var(--line); padding-bottom: 2.5rem; margin-bottom: 2.5rem;
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 2rem;
+  opacity: 0; animation: rise 0.6s 0.05s ease forwards;
+}
+.report-eyebrow {
+  font-size: 9px; letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--ice2); margin-bottom: 0.75rem;
+  display: flex; align-items: center; gap: 8px;
+}
+.report-eyebrow::before { content: ''; width: 14px; height: 1px; background: var(--ice2); }
+.report-title { font-family: var(--serif); font-size: clamp(26px, 3vw, 38px); font-weight: 400; line-height: 1.1; letter-spacing: -0.02em; color: var(--text); margin-bottom: 0.4rem; }
+.report-sub { font-size: 11px; color: var(--text3); letter-spacing: 0.04em; }
+.report-hd-right { display: flex; gap: 8px; flex-shrink: 0; align-items: center; }
+.btn-share {
+  font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em;
+  padding: 8px 16px; border: 1px solid var(--line2); background: transparent;
+  color: var(--text3); cursor: pointer; transition: all 0.2s;
+}
+.btn-share:hover { color: var(--text); background: var(--bg2); }
+.btn-new-audit {
+  font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em;
+  padding: 8px 16px; background: var(--ice-dim); border: 1px solid rgba(155,184,255,0.25);
+  color: var(--ice); cursor: pointer; transition: all 0.2s;
+}
+.btn-new-audit:hover { background: var(--ice-dim2); border-color: rgba(155,184,255,0.45); }
+
+/* SCORE BAR */
+.score-bar {
+  display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 220px;
+  border: 1px solid var(--line2); background: var(--bg1);
+  margin-bottom: 3rem; opacity: 0; animation: rise 0.6s 0.1s ease forwards;
+}
+.sc-cell { padding: 1.5rem 1.75rem; border-right: 1px solid var(--line); }
+.sc-cell:last-child { border-right: none; }
+.sc-cell-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text3); margin-bottom: 0.5rem; }
+.sc-grade { font-family: var(--serif); font-size: 46px; color: var(--amber); line-height: 1; font-style: italic; }
+.sc-number { font-family: var(--serif); font-size: 30px; color: var(--text); line-height: 1; }
+.sc-count { font-family: var(--serif); font-size: 24px; line-height: 1; }
+.sc-count.r { color: var(--red); }
+.sc-count.a { color: var(--amber); }
+.sc-count.g { color: var(--green); }
+.sc-summary { display: flex; align-items: center; gap: 1rem; }
+.sc-donut { position: relative; width: 50px; height: 50px; flex-shrink: 0; }
+.sc-donut svg { transform: rotate(-90deg); }
+.donut-track { fill: none; stroke: var(--bg3); stroke-width: 4; }
+.donut-fill { fill: none; stroke: var(--amber); stroke-width: 4; stroke-linecap: round; stroke-dasharray: 138; stroke-dashoffset: 52; }
+.donut-pct { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 500; color: var(--amber); }
+.sc-summary-text .sst-grade { font-family: var(--serif); font-size: 13px; color: var(--text); margin-bottom: 3px; }
+.sc-summary-text .sst-desc { font-size: 10px; color: var(--text3); line-height: 1.5; }
+
+/* REPORT BODY */
+.report-body { display: grid; grid-template-columns: 190px 1fr; gap: 2.5rem; align-items: start; }
+
+.cat-nav { position: sticky; top: 80px; opacity: 0; animation: rise 0.6s 0.15s ease forwards; }
+.cat-nav-label { font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text3); margin-bottom: 0.75rem; }
+.cat-nav-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 10px; font-size: 11px; color: var(--text3); cursor: pointer;
+  border-left: 2px solid transparent; transition: all 0.15s; margin-bottom: 2px;
+}
+.cat-nav-item:hover { color: var(--text2); background: var(--bg1); }
+.cat-nav-item.active { color: var(--text); border-left-color: var(--ice); background: var(--ice-dim); }
+.cat-nav-score { font-size: 10px; padding: 2px 7px; background: var(--bg3); border-radius: 20px; }
+.cat-nav-item.active .cat-nav-score { background: var(--ice-dim2); color: var(--ice); }
+
+.findings { opacity: 0; animation: rise 0.6s 0.2s ease forwards; }
+
+.report-summary-card {
+  background: var(--bg1); border: 1px solid var(--line2); border-left: 2px solid var(--ice);
+  padding: 1.5rem; margin-bottom: 2rem;
+}
+.rsc-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--ice2); margin-bottom: 0.5rem; }
+.rsc-text { font-size: 13px; color: var(--text2); line-height: 1.85; font-weight: 300; font-style: italic; }
+
+.cat-section { margin-bottom: 2.5rem; }
+.cat-section-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding-bottom: 1rem; margin-bottom: 1px; border-bottom: 1px solid var(--line);
+}
+.cat-section-title { font-family: var(--serif); font-size: 20px; font-weight: 400; color: var(--text); }
+.score-pill { font-size: 11px; padding: 3px 10px; border-radius: 20px; }
+.pill-r { background: var(--red-dim); color: var(--red); border: 1px solid rgba(255,107,107,0.2); }
+.pill-a { background: var(--amber-dim); color: var(--amber); border: 1px solid rgba(255,179,71,0.2); }
+.pill-g { background: var(--green-dim); color: var(--green); border: 1px solid rgba(107,219,158,0.2); }
+
+.finding {
+  background: var(--bg1); border: 1px solid var(--line);
+  margin-bottom: 1px; transition: border-color 0.15s;
+}
+.finding:hover { border-color: var(--line2); }
+.finding-head {
+  display: grid; grid-template-columns: 46px 1fr auto;
+  gap: 12px; padding: 13px 16px; align-items: center; cursor: pointer;
+}
+.f-sev { font-size: 9px; font-weight: 500; letter-spacing: 0.07em; text-transform: uppercase; padding: 4px 0; text-align: center; border-radius: 2px; }
+.sev-fail { background: var(--red-dim); color: var(--red); }
+.sev-warn { background: var(--amber-dim); color: var(--amber); }
+.sev-pass { background: var(--green-dim); color: var(--green); }
+.f-name { font-size: 12px; color: var(--text); }
+.f-count { font-size: 10px; color: var(--text3); margin-top: 2px; }
+.f-toggle { font-size: 10px; color: var(--text3); transition: transform 0.2s; }
+.finding.open .f-toggle { transform: rotate(180deg); }
+.finding-body { display: none; border-top: 1px solid var(--line); padding: 16px; }
+.finding.open .finding-body { display: block; }
+.f-explanation { font-size: 12px; color: var(--text2); line-height: 1.85; font-weight: 300; margin-bottom: 1rem; }
+.f-files { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 1rem; }
+.f-file { font-size: 10px; color: var(--ice2); padding: 3px 9px; border: 1px solid rgba(155,184,255,0.15); background: var(--ice-dim); letter-spacing: 0.03em; }
+.f-rec-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text3); margin-bottom: 0.4rem; }
+.f-rec { font-size: 12px; color: var(--text2); line-height: 1.75; font-weight: 300; padding-left: 12px; border-left: 2px solid var(--bg4); }
+code { font-size: 11px; font-family: var(--mono); }
+.cf { color: var(--red); }
+.ci { color: var(--ice); }
+.ca { color: var(--amber); }
+
+.share-toast {
+  display: none; position: fixed; bottom: 1.5rem; right: 1.5rem;
+  background: var(--bg2); border: 1px solid var(--line2);
+  padding: 10px 16px; font-size: 11px; color: var(--green);
+  letter-spacing: 0.04em; border-radius: 2px; z-index: 300;
+}
+.share-toast.show { display: block; animation: rise 0.3s ease; }
+
+@media (max-width: 960px) {
+  .connect-layout { grid-template-columns: 1fr; }
+  .c-sidebar { position: static; }
+  .score-bar { grid-template-columns: 1fr 1fr; }
+  .sc-cell:last-child { display: none; }
+  .report-body { grid-template-columns: 1fr; }
+  .cat-nav { display: none; }
+  .connect-inner, .report-inner { padding: 2rem 1.25rem 4rem; }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="#" class="logo" onclick="goTo('marketing');return false;">Glass</a>
+  <ul class="nav-links" id="nav-marketing-links">
+    <li><a href="#problem">Problem</a></li>
+    <li><a href="#how">How it works</a></li>
+    <li><a href="#pricing">Pricing</a></li>
+  </ul>
+  <div style="display:flex;align-items:center;gap:12px;">
+    <div class="nav-user" id="nav-user">
+      <div class="nav-avatar">JD</div>
+      <span>jdoe</span>
+    </div>
+    <button onclick="goTo('connect')" class="nav-btn" id="nav-cta" style="border:none;cursor:pointer;">Audit your suite →</button>
+  </div>
+</nav>
+
+<div class="app-page active" id="page-marketing">
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-inner">
+    <div class="hero-left">
+      <h1>Your CI is green.<br>Your suite is<br><span class="accent">already broken.</span></h1>
+      <p class="hero-body">AI is generating tests faster than any team can review them. Glass audits your test suite against framework best practices and your own team conventions — and tells you exactly what's brittle, inconsistent, or missing.</p>
+      <div class="hero-ctas">
+        <a href="#pricing" class="btn-cta">Audit your test suite</a>
+        <a href="#how" class="btn-text">See how it works →</a>
+      </div>
+      <div class="hero-proof">
+        <span class="proof-item">Read-only repo access</span>
+        <span class="proof-dot"></span>
+        <span class="proof-item">Playwright &amp; Cypress</span>
+        <span class="proof-dot"></span>
+        <span class="proof-item">Report in minutes</span>
+      </div>
+    </div>
+
+    <div class="hero-right">
+        <div class="report-panel">
+        <div class="rp-bar">
+          <div class="rp-dots">
+            <div class="rp-dot"></div>
+            <div class="rp-dot"></div>
+            <div class="rp-dot"></div>
+          </div>
+          <span class="rp-title">checkout-tests · 24 files · Playwright</span>
+          <span class="rp-badge">58/100 · Grade C</span>
+        </div>
+        <div class="rp-score">
+          <div class="rp-score-cell">
+            <div class="sc-label">Tests</div>
+            <div class="sc-val">187</div>
+          </div>
+          <div class="rp-score-cell">
+            <div class="sc-label">Failures</div>
+            <div class="sc-val r">14</div>
+          </div>
+          <div class="rp-score-cell">
+            <div class="sc-label">Warnings</div>
+            <div class="sc-val a">22</div>
+          </div>
+          <div class="rp-score-cell">
+            <div class="sc-label">Passing</div>
+            <div class="sc-val g">31</div>
+          </div>
+        </div>
+        <div class="rp-rows">
+          <div class="rp-row">
+            <span class="rp-sev sev-f">FAIL</span>
+            <div class="rp-msg"><b>Brittle selectors</b> — 14 CSS classes targeting auto-generated names. Silent breakage risk.</div>
+            <span class="rp-file">checkout.spec.ts</span>
+          </div>
+          <div class="rp-row">
+            <span class="rp-sev sev-f">FAIL</span>
+            <div class="rp-msg"><b>POM bypassed</b> — Direct locators in 40% of files. Convention exists but isn't enforced.</div>
+            <span class="rp-file">login.spec.ts +6</span>
+          </div>
+          <div class="rp-row">
+            <span class="rp-sev sev-w">WARN</span>
+            <div class="rp-msg"><b>Arbitrary waits</b> — page.waitForTimeout() in 8 tests. Replace with state conditions.</div>
+            <span class="rp-file">basket.spec.ts</span>
+          </div>
+          <div class="rp-row">
+            <span class="rp-sev sev-w">WARN</span>
+            <div class="rp-msg"><b>Hardcoded URLs</b> — Staging values baked into 3 files.</div>
+            <span class="rp-file">payment.spec.ts +2</span>
+          </div>
+          <div class="rp-row">
+            <span class="rp-sev sev-p">PASS</span>
+            <div class="rp-msg"><b>Naming consistent</b> — All files follow *.spec.ts convention throughout.</div>
+            <span class="rp-file">all files</span>
+          </div>
+          <div class="rp-row">
+            <span class="rp-sev sev-p">PASS</span>
+            <div class="rp-msg"><b>Test independence</b> — No shared state. Setup and teardown is clean.</div>
+            <span class="rp-file">all files</span>
+          </div>
+        </div><!-- /rp-rows -->
+        </div><!-- /report-panel -->
+    </div><!-- /hero-right -->
+  </div><!-- /hero-inner -->
+</section>
+
+<hr>
+
+<!-- PROBLEM -->
+<div id="problem">
+  <div class="sec">
+    <div class="sec-label">The problem</div>
+    <h2>AI writes tests.<br><em>Nobody checks</em> if they're any good.</h2>
+    <p class="sec-sub">Engineering teams are generating test suites at a scale no human team could match. The suite grows. Confidence doesn't.</p>
+    <div class="problem-wrap">
+      <div class="problem-grid">
+        <div class="prob-card">
+          <div class="prob-marker"></div>
+          <div class="prob-tag">False confidence</div>
+          <h3>Green CI doesn't mean trustworthy tests</h3>
+          <p>Your pipeline passes. Coverage metrics look fine. But your tests are checking the wrong things, in the wrong way, with selectors that break silently the next time your UI framework updates.</p>
+        </div>
+        <div class="prob-card">
+          <div class="prob-marker"></div>
+          <div class="prob-tag">Convention drift</div>
+          <h3>Standards erode every time an agent touches the suite</h3>
+          <p>Page Object Model, naming conventions, fixture patterns — all carefully established, all quietly abandoned the moment AI-generated tests start arriving in bulk.</p>
+        </div>
+        <div class="prob-card">
+          <div class="prob-marker"></div>
+          <div class="prob-tag">Maintenance black hole</div>
+          <h3>The fix for bad tests is usually more bad tests</h3>
+          <p>Teams respond to failing tests by prompting more agents. The quality problem compounds. Nobody owns it. Nobody has a baseline to measure it against.</p>
+        </div>
+        <div class="prob-card">
+          <div class="prob-marker"></div>
+          <div class="prob-tag">No audit layer</div>
+          <h3>No agreed standard to evaluate against</h3>
+          <p>Framework best practices exist. Your team has conventions. But nothing is systematically checking whether your tests follow either — until something breaks in production.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr>
+
+<!-- HOW IT WORKS -->
+<div id="how">
+  <div class="sec">
+    <div class="sec-label">How it works</div>
+    <h2>Connect. Analyse.<br><em>Understand.</em></h2>
+    <p class="sec-sub">Three steps from repo to report. Read-only access. No infrastructure changes. No digging through your product code.</p>
+    <div class="how-layout">
+      <div class="steps-list">
+        <div class="step-item">
+          <span class="step-n">1.</span>
+          <div class="step-body">
+            <div class="step-title">Connect your repo</div>
+            <p class="step-desc">Authenticate via GitHub. Grant read-only access scoped to your test directory. We never touch your application code, your secrets, or your production systems.</p>
+            <span class="step-chip">GitHub App · read-only</span>
+          </div>
+        </div>
+        <div class="step-item">
+          <span class="step-n">2.</span>
+          <div class="step-body">
+            <div class="step-title">We analyse your tests</div>
+            <p class="step-desc">Framework auto-detected. Your test files evaluated against Playwright or Cypress best practices — selector quality, assertion strength, POM consistency, test independence, data hygiene, and more.</p>
+            <span class="step-chip">Playwright · Cypress</span>
+          </div>
+        </div>
+        <div class="step-item">
+          <span class="step-n">3.</span>
+          <div class="step-body">
+            <div class="step-title">Get a report worth reading</div>
+            <p class="step-desc">Not a linter dump. A structured, plain-English report that reads like a senior QA engineer reviewed your suite — because the rules were written by one. Every finding has an explanation and a recommendation.</p>
+            <span class="step-chip">Shareable · Actionable</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="findings-box">
+        <div class="fb-head">
+          <span class="fb-head-label">Sample findings · login.spec.ts</span>
+          <span class="fb-fw">Playwright</span>
+        </div>
+        <div class="fb-list">
+          <div class="fb-item">
+            <div class="fb-sev fb-f">FAIL</div>
+            <div>
+              <div class="fb-title">Brittle selector</div>
+              <div class="fb-detail">CSS class .btn-primary-v2 is auto-generated. Will break silently on the next UI update. Replace with data-testid.</div>
+            </div>
+          </div>
+          <div class="fb-item">
+            <div class="fb-sev fb-f">FAIL</div>
+            <div>
+              <div class="fb-title">POM bypass</div>
+              <div class="fb-detail">Direct page.locator() for an element that exists in LoginPage. Route through your page object.</div>
+            </div>
+          </div>
+          <div class="fb-item">
+            <div class="fb-sev fb-w">WARN</div>
+            <div>
+              <div class="fb-title">Arbitrary wait</div>
+              <div class="fb-detail">page.waitForTimeout(2000) on line 34. Replace with a waitFor condition tied to element state.</div>
+            </div>
+          </div>
+          <div class="fb-item">
+            <div class="fb-sev fb-w">WARN</div>
+            <div>
+              <div class="fb-title">Weak assertion</div>
+              <div class="fb-detail">toBeVisible() confirms presence only. Assert on content or state to prove correctness.</div>
+            </div>
+          </div>
+          <div class="fb-item">
+            <div class="fb-sev fb-p">PASS</div>
+            <div>
+              <div class="fb-title">Naming consistent</div>
+              <div class="fb-detail">File follows *.spec.ts convention. Test descriptions are clear and specific throughout.</div>
+            </div>
+          </div>
+          <div class="fb-item">
+            <div class="fb-sev fb-p">PASS</div>
+            <div>
+              <div class="fb-title">Test independence</div>
+              <div class="fb-detail">No shared state between tests. Setup and teardown is clean.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr>
+
+<!-- PRICING -->
+<div id="pricing">
+  <div class="sec">
+    <div class="sec-label">Pricing</div>
+    <h2>Start with one report.<br>Stay for the <em>intelligence.</em></h2>
+    <p class="sec-sub">Three tiers built around how deeply you want to understand your test suite. No free tier — we're serious about quality, and so are you.</p>
+    <div class="pricing-layout">
+
+      <div class="price-card">
+        <div class="pc-tier">Tier 1 · Audit</div>
+        <div class="pc-name">Report</div>
+        <p class="pc-desc">A one-time quality audit of your test suite. Framework best practices, structural analysis, every finding explained in plain English.</p>
+        <div class="pc-price">
+          <span class="pc-amount">£49</span>
+          <span class="pc-per">/ report</span>
+        </div>
+        <ul class="pc-features">
+          <li>Full test suite audit</li>
+          <li>Framework best practice checks</li>
+          <li>Selector, assertion &amp; POM analysis</li>
+          <li>Plain English findings &amp; recommendations</li>
+          <li>Shareable report URL</li>
+          <li>Playwright or Cypress</li>
+        </ul>
+        <a href="#" class="pc-btn pc-btn-ghost">Run an audit</a>
+      </div>
+
+      <div class="price-card hi">
+        <div class="pc-tier">Tier 2 · Intelligence</div>
+        <div class="pc-name">Diagnose</div>
+        <p class="pc-desc">Connect your data sources. Understand not just how your tests are written — but whether you're testing the right things at all.</p>
+        <div class="pc-price">
+          <span class="pc-amount">£299</span>
+          <span class="pc-per">/ month</span>
+        </div>
+        <ul class="pc-features">
+          <li>Everything in Report</li>
+          <li>Jira AC coverage mapping</li>
+          <li>Untested critical path detection</li>
+          <li>Slack &amp; PR history context</li>
+          <li>Convention drift tracking over time</li>
+          <li>Risk-aligned coverage gap analysis</li>
+        </ul>
+        <a href="#" class="pc-btn pc-btn-main">Get started</a>
+      </div>
+
+      <div class="price-card">
+        <div class="pc-tier">Tier 3 · Continuous</div>
+        <div class="pc-name">Monitor</div>
+        <p class="pc-desc">Always-on intelligence in your pipeline. Every PR checked. Every AI-generated test evaluated. Standards maintained automatically.</p>
+        <div class="pc-price">
+          <span class="pc-amount">Custom</span>
+        </div>
+        <ul class="pc-features">
+          <li>Everything in Diagnose</li>
+          <li>Live CI/CD pipeline integration</li>
+          <li>Per-PR test quality gating</li>
+          <li>Auto-detect and flag AI test debt</li>
+          <li>Heal suggestions on flaking tests</li>
+          <li>Quality baseline dashboard</li>
+        </ul>
+        <a href="#" class="pc-btn pc-btn-ghost">Talk to us</a>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">Glass</div>
+  <div class="footer-line">Built by a QA engineer who got tired of broken test suites.</div>
+</footer>
+
+</div><!-- /page-marketing -->
+
+
+<!-- ══════════════════════════════
+     PAGE 2 — CONNECT REPO
+══════════════════════════════ -->
+<div class="app-page" id="page-connect">
+  <div class="connect-wrap">
+    <div class="connect-inner">
+
+      <div style="opacity:0;animation:rise 0.6s 0.05s ease forwards;">
+        <div class="connect-eyebrow">Step 1 of 2</div>
+        <div class="connect-title">Connect your <em>repository</em></div>
+        <p class="connect-sub">Read-only access, scoped to your test directory. We never touch your application code, secrets, or production systems.</p>
+      </div>
+
+      <div class="steps-bar">
+        <div class="step-node active" id="step-1"><div class="step-circle">1</div><span>Connect</span></div>
+        <div class="step-line" id="step-line-1"></div>
+        <div class="step-node" id="step-2"><div class="step-circle">2</div><span>Configure</span></div>
+        <div class="step-line" id="step-line-2"></div>
+        <div class="step-node" id="step-3"><div class="step-circle">3</div><span>Run audit</span></div>
+      </div>
+
+      <div class="connect-layout">
+        <div>
+          <!-- GITHUB -->
+          <div class="c-panel">
+            <div class="c-panel-head"><span class="c-panel-title">GitHub authentication</span></div>
+            <div class="gh-prompt" id="gh-prompt">
+              <div class="gh-icon">⌥</div>
+              <h3>Connect your GitHub account</h3>
+              <p>Grant read-only access to selected repos. Scoped to your test directory — nothing else.</p>
+              <button class="btn-gh" onclick="simulateAuth()">
+                <span style="font-size:13px;">⌥</span> Continue with GitHub
+              </button>
+            </div>
+            <div class="gh-connected" id="gh-connected">
+              <div style="width:32px;height:32px;border-radius:50%;background:var(--ice-dim);border:1px solid rgba(155,184,255,0.3);display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--ice);">JD</div>
+              <div>
+                <div style="font-size:12px;color:var(--text);">jdoe</div>
+                <div style="font-size:10px;color:var(--green);">● Connected · read-only</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- REPO SELECT -->
+          <div class="c-panel">
+            <div class="c-panel-head">
+              <span class="c-panel-title">Select repository</span>
+              <span style="font-size:10px;color:var(--ice2);cursor:pointer;letter-spacing:0.06em;opacity:0.4;" id="refresh-btn">↻ Refresh</span>
+            </div>
+            <div class="repo-search-row" id="repo-search-row">
+              <input class="repo-search" type="text" placeholder="Search repositories…" oninput="filterRepos(this.value)">
+            </div>
+            <div id="repo-placeholder" style="padding:1.75rem 1.5rem;text-align:center;font-size:12px;color:var(--text3);">Connect GitHub to load repositories</div>
+            <div class="repo-list" id="repo-list"></div>
+            <div class="fw-row" id="fw-row">
+              <span class="fw-label">Framework detected</span>
+              <div class="fw-detected"><div class="fw-pulse"></div><span id="fw-name">Playwright</span></div>
+            </div>
+            <div class="dir-row" id="dir-row">
+              <span class="dir-label">Test directory</span>
+              <input class="dir-input" id="dir-input" type="text" placeholder="e.g. e2e/">
+            </div>
+          </div>
+        </div>
+
+        <!-- SIDEBAR -->
+        <div class="c-sidebar">
+          <div class="c-panel">
+            <div class="c-panel-head"><span class="c-panel-title">Audit summary</span></div>
+            <div class="sum-row"><span class="sum-key">Repository</span><span class="sum-val empty" id="sum-repo">Not selected</span></div>
+            <div class="sum-row"><span class="sum-key">Framework</span><span class="sum-val empty" id="sum-fw">Detecting…</span></div>
+            <div class="sum-row"><span class="sum-key">Test path</span><span class="sum-val empty" id="sum-path">—</span></div>
+            <div class="sum-row"><span class="sum-key">Access</span><span class="sum-val empty" id="sum-access">Pending</span></div>
+          </div>
+
+          <div class="access-note" style="margin-bottom:1rem;">
+            <p><strong>Read-only access.</strong> Glass is a GitHub App scoped to your selected repo's test directory only. No write permissions. No access to application code or secrets.</p>
+          </div>
+
+          <button class="btn-run" id="run-btn" disabled onclick="openPayment()">
+            <span style="font-size:11px;">⚿</span> Run audit · £49
+          </button>
+          <div class="pay-note">Powered by Stripe. Payment required to generate report.<br><span style="opacity:0.6;">🔒 Secure · PCI compliant</span></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div><!-- /page-connect -->
+
+
+<!-- ══════════════════════════════
+     PAYMENT MODAL
+══════════════════════════════ -->
+<div class="modal-overlay" id="payment-modal">
+  <div class="modal">
+    <div class="modal-head">
+      <span class="modal-head-title">Complete payment</span>
+      <button class="modal-close" onclick="closePayment()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-order">
+        <div>
+          <div class="order-name">Glass Audit Report</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:3px;" id="modal-repo">—</div>
+        </div>
+        <div class="order-price">£49</div>
+      </div>
+      <label class="f-label">Email address</label>
+      <input class="f-input" type="email" placeholder="you@company.com">
+      <label class="f-label">Card number</label>
+      <input class="f-input" type="text" placeholder="4242 4242 4242 4242" maxlength="19" oninput="fmtCard(this)">
+      <div class="f-row">
+        <div><label class="f-label">Expiry</label><input class="f-input" type="text" placeholder="MM / YY" maxlength="7" oninput="fmtExp(this)" style="margin-bottom:0;"></div>
+        <div><label class="f-label">CVC</label><input class="f-input" type="text" placeholder="123" maxlength="4" style="margin-bottom:0;"></div>
+      </div>
+      <button class="btn-pay" onclick="processPayment()">Pay £49 and generate report</button>
+      <div class="stripe-note">🔒 Payments handled by Stripe. Your card is never stored.</div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════
+     ANALYSIS OVERLAY
+══════════════════════════════ -->
+<div class="analysis-overlay" id="analysis-overlay">
+  <div class="a-spinner"></div>
+  <div class="a-title">Analysing your suite…</div>
+  <div class="a-steps">
+    <div class="a-step" id="as-0"><span class="a-step-icon">⤷</span>Reading test files</div>
+    <div class="a-step" id="as-1"><span class="a-step-icon">⤷</span>Detecting framework &amp; conventions</div>
+    <div class="a-step" id="as-2"><span class="a-step-icon">⤷</span>Evaluating selector quality</div>
+    <div class="a-step" id="as-3"><span class="a-step-icon">⤷</span>Checking assertion strength</div>
+    <div class="a-step" id="as-4"><span class="a-step-icon">⤷</span>Auditing POM consistency</div>
+    <div class="a-step" id="as-5"><span class="a-step-icon">⤷</span>Scoring test independence</div>
+    <div class="a-step" id="as-6"><span class="a-step-icon">⤷</span>Generating report</div>
+  </div>
+  <div class="a-bar"><div class="a-fill" id="a-fill"></div></div>
+</div>
+
+
+<!-- ══════════════════════════════
+     PAGE 3 — REPORT
+══════════════════════════════ -->
+<div class="app-page" id="page-report">
+  <div class="report-wrap">
+    <div class="report-inner">
+
+      <div class="report-hd">
+        <div>
+          <div class="report-eyebrow">Audit report · March 2026</div>
+          <div class="report-title" id="report-repo-title">acme-co / checkout-tests</div>
+          <div class="report-sub">24 files · 187 tests · Playwright · Generated in 41s</div>
+        </div>
+        <div class="report-hd-right">
+          <button class="btn-share" onclick="shareReport()">↗ Share report</button>
+          <button class="btn-new-audit" onclick="goTo('connect')">↩ New audit</button>
+        </div>
+      </div>
+
+      <div class="score-bar">
+        <div class="sc-cell"><div class="sc-cell-label">Grade</div><div class="sc-grade">C</div></div>
+        <div class="sc-cell"><div class="sc-cell-label">Score</div><div class="sc-number">58<span style="font-size:16px;color:var(--text3)">/100</span></div></div>
+        <div class="sc-cell"><div class="sc-cell-label">Failures</div><div class="sc-count r">14</div></div>
+        <div class="sc-cell"><div class="sc-cell-label">Warnings</div><div class="sc-count a">22</div></div>
+        <div class="sc-cell">
+          <div class="sc-summary">
+            <div class="sc-donut">
+              <svg width="50" height="50" viewBox="0 0 50 50"><circle class="donut-track" cx="25" cy="25" r="22"/><circle class="donut-fill" cx="25" cy="25" r="22"/></svg>
+              <div class="donut-pct">58%</div>
+            </div>
+            <div class="sc-summary-text">
+              <div class="sst-grade">Moderate risk</div>
+              <div class="sst-desc">Brittle selectors and POM bypass need attention before next sprint.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="report-body">
+        <div class="cat-nav">
+          <div class="cat-nav-label">Categories</div>
+          <div class="cat-nav-item active" onclick="scrollTo('cat-structure',this)">Structure <span class="cat-nav-score">72</span></div>
+          <div class="cat-nav-item" onclick="scrollTo('cat-selectors',this)">Selectors <span class="cat-nav-score">31</span></div>
+          <div class="cat-nav-item" onclick="scrollTo('cat-assertions',this)">Assertions <span class="cat-nav-score">55</span></div>
+          <div class="cat-nav-item" onclick="scrollTo('cat-pom',this)">Page Objects <span class="cat-nav-score">44</span></div>
+          <div class="cat-nav-item" onclick="scrollTo('cat-independence',this)">Independence <span class="cat-nav-score">80</span></div>
+          <div class="cat-nav-item" onclick="scrollTo('cat-data',this)">Data hygiene <span class="cat-nav-score">62</span></div>
+          <div class="cat-nav-item" onclick="scrollTo('cat-framework',this)">Framework <span class="cat-nav-score">45</span></div>
+        </div>
+
+        <div class="findings">
+          <div class="report-summary-card">
+            <div class="rsc-label">Summary</div>
+            <div class="rsc-text">Your suite has reasonable structure, but significant brittleness risk in selectors and multiple tests with no meaningful assertions. The POM pattern exists but is bypassed in roughly 40% of files — likely the result of recent AI-generated additions. Fix selectors and POM consistency first; they represent the fastest improvement in reliability per hour of work.</div>
+          </div>
+
+          <!-- STRUCTURE -->
+          <div class="cat-section" id="cat-structure">
+            <div class="cat-section-head">
+              <div class="cat-section-title">Structure &amp; Organisation</div>
+              <span class="score-pill pill-a">72/100</span>
+            </div>
+            <div class="finding open">
+              <div class="finding-head" onclick="toggle(this)">
+                <span class="f-sev sev-pass">PASS</span>
+                <div><div class="f-name">File naming convention</div><div class="f-count">All 24 files · *.spec.ts</div></div>
+                <span class="f-toggle">▾</span>
+              </div>
+              <div class="finding-body">
+                <div class="f-explanation">All test files follow the <code class="ci">*.spec.ts</code> naming pattern consistently. This makes test discovery, CI configuration, and code review significantly easier.</div>
+                <div class="f-files"><span class="f-file">all files</span></div>
+                <div class="f-rec-label">Recommendation</div>
+                <div class="f-rec">No action required. Enforce via ESLint or a pre-commit hook to maintain this as the suite grows.</div>
+              </div>
+            </div>
+            <div class="finding">
+              <div class="finding-head" onclick="toggle(this)">
+                <span class="f-sev sev-warn">WARN</span>
+                <div><div class="f-name">Test file size</div><div class="f-count">2 files over 300 lines</div></div>
+                <span class="f-toggle">▾</span>
+              </div>
+              <div class="finding-body">
+                <div class="f-explanation">Two files contain an excessive number of tests covering multiple unrelated flows. Files this large become harder to maintain and slower to diagnose when they fail.</div>
+                <div class="f-files"><span class="f-file">checkout.spec.ts</span><span class="f-file">account.spec.ts</span></div>
+                <div class="f-rec-label">Recommendation</div>
+                <div class="f-rec">Split by user journey or feature. Each spec file should cover a single cohesive flow. Aim for under 150 lines per file.</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- SELECTORS -->
+          <div class="cat-section" id="cat-selectors">
+            <div class="cat-section-head">
+              <div class="cat-section-title">Selector Quality</div>
+              <span class="score-pill pill-r">31/100</span>
+            </div>
+            <div class="finding">
+              <div class="finding-head" onclick="toggle(this)">
+                <span class="f-sev sev-fail">FAIL</span>
+                <div><div class="f-name">Brittle CSS selectors</div><div class="f-count">14 instances across 6 files</div></div>
+                <span class="f-toggle">▾</span>
+              </div>
+              <div class="finding-body">
+                <div class="f-explanation">14 selectors target auto-generated or unstable class names (e.g. <code class="cf">.btn-primary-v2</code>, <code class="cf">.sc-3kab8</code>). These will break silently the next time your UI framework regenerates its class hashes or a designer renames a component.</div>
+                <div class="f-files"><span class="f-file">checkout.spec.ts</span><span class="f-file">login.spec.ts</span><span class="f-file">basket.spec.ts</span><span class="f-file">+3 more</span></div>
+                <div class="f-rec-label">Recommendation</div>
+                <div class="f-rec">Replace with <code class="ci">data-testid</code> attributes on the elements under test. This is the single highest-leverage fix in this report.</div>
+              </div>
+            </div>
+            <div class="finding">
+              <div class="finding-head" onclick="toggle(this)">
+                <span class="f-sev sev-fail">FAIL</span>
+                <div><div class="f-name">Missing test IDs</div><div class="f-count">No data-testid usage found</div></div>
+                <span class="f-toggle">▾</span>
+              </div>
+              <div class="finding-body">
+                <div class="f-explanation">There is no use of <code class="cf">data-testid</code>, <code class="cf">data-cy</code>, or equivalent stable test attributes anywhere in the suite. Every selector is vulnerable to UI refactors.</div>
+                <div class="f-files"><span class="f-file">all files</span></div>
+                <div class="f-rec-label">Recommendation</div>
+                <div class="f-rec">Establish a convention (we recommend <code class="ci">data-testid</code>) and add it to your component library. Start with the most frequently tested elements: buttons, form fields, navigation items.</div>
+              </div>
+            </div>
+            <div class="finding">
+              <div class="finding-head" onclick="toggle(this)">
+                <span class="f-sev sev-warn">WARN</span>
+                <div><div class="f-name">Hardcoded text selectors</div><div class="f-count">6 instances</div></div>
+                <span class="f-toggle">▾</span>
+              </div>
+              <div class="finding-body">
+                <div class="f-explanation">6 selectors are built from visible copy — button labels, heading text, and navigation links. These will break silently when marketing or content updates the wording.</div>
+                <div class="f-files"><span class="f-file">navigation.spec.ts</span><span class="f-file">payment.spec.ts</span></div>
+                <div class="f-rec-label">Recommendation</div>
+                <div class="f-rec">Replace with structural selectors or test IDs. If targeting by text is intentional, use <code class="ci">getByRole</code> and add a comment explaining the intent.</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ASSERTIONS -->
+          <div class="cat-section" id="cat-assertions">
+            <div class="cat-section-head">
+              <div class="cat-section-title">Assertion Quality</div>
+              <span class="score-pill pill-a">55/100</span>
+            </div>
+            <div class="finding">
+              <div class="finding-head" onclick="toggle(this)">
+                <span class="f-sev sev-warn">WARN</span>
+                <div><div class="f-name">Weak assertions</div><div class="f-count">11 tests only check existence</div></div>
+                <span class="f-toggle">▾</span>
+              </div>
+              <div class="finding-body">
+                <div class="f-explanation">11 tests assert only that an element is visible (<code class="ca">toBeVisible()</code>) without verifying its content, state, or value. A broken confirmation message would pass these tests.</div>
+                <div class="f-files"><span class="f-file">confirmation.spec.ts</span><span class="f-file">dashboard.spec.ts</span><span class="f-file">+3 more</span></div>
+                <div class="f-rec-label">Recommendation</div>
+                <div class="f-rec">Upgrade to content or state assertions: <code class="ci">toHaveText()</code>, <code class="ci">toHaveValue()</code>, <code class="ci">toBeChecked()</code>. Ask: what would change if this feature were broken? Assert that.</div>
+              </div>
+            </div>
+            <div class="finding">
+              <div class="finding-head" onclick="toggle(this)">
+                <span class="f-sev sev-fail">FAIL</span>
+                <div><div class="f-name">Missing assertions</div><div class="f-count">3 tests have no assertions</div></div>
+                <span class="f-toggle">▾</span>
+              </div>
+              <div class="finding-body">
+                <div class="f-explanation">3 tests perform actions (clicking, typing, navigating) but never assert anything. These tests will pass regardless of what the application does — a green result with zero signal.</div>
+                <div class="f-files"><span class="f-file">checkout.spec.ts</span><span class="f-file">onboarding.spec.ts</span></div>
+                <div class="f-rec-label">Recommendation</div>
+                <div class="f-rec">Every test must assert at least one meaningful outcome. If you're unsure what to assert, the test's scope is unclear — define its purpose or remove it.</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- POM -->
+          <div class="cat-section" id="cat-pom">
+            <div class="cat-section-head">
+              <div class="cat-section-title">Page Object Model</div>
+              <span class="score-pill pill-r">44/100</span>
+            </div>
+            <div class="finding open">
+              <div class="finding-head" onclick="toggle(this)">
+                <span class="f-sev sev-pass">PASS</span>
+                <div><div class="f-name">POM pattern present</div><div class="f-count">8 page objects found</div></div>
+                <span class="f-toggle">▾</span>
+              </div>
+              <div class="finding-body">
+                <div class="f-explanation">The codebase contains a well-structured page object layer with 8 page objects covering key flows. The pattern is sound — the problem is consistency of adoption.</div>
+                <div class="f-files"><span class="f-file">pages/</span></div>
+                <div class="f-rec-label">Recommendation</div>
+                <div class="f-rec">The foundation is good. The gap is enforcement — see the bypass finding below.</div>
+              </div>
+            </div>
+            <div class="finding">
+              <div class="finding-head" onclick="toggle(this)">
+                <span class="f-sev sev-fail">FAIL</span>
+                <div><div class="f-name">POM bypass</div><div class="f-count">Direct locators in 9 files</div></div>
+                <span class="f-toggle">▾</span>
+              </div>
+              <div class="finding-body">
+                <div class="f-explanation">9 test files use direct <code class="cf">page.locator()</code> calls for elements that have corresponding page objects. Most likely introduced by AI-generated tests — this undermines the abstraction layer your team established.</div>
+                <div class="f-files"><span class="f-file">login.spec.ts</span><span class="f-file">checkout.spec.ts</span><span class="f-file">+7 more</span></div>
+                <div class="f-rec-label">Recommendation</div>
+                <div class="f-rec">Route all element access through page objects. Brief whoever is prompting AI test generation on the POM convention before the next sprint.</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- INDEPENDENCE -->
+          <div class="cat-section" id="cat-independence">
+            <div class="cat-section-head">
+              <div class="cat-section-title">Test Independence</div>
+              <span class="score-pill pill-g">80/100</span>
+            </div>
+            <div class="finding open">
+              <div class="finding-head" onclick="toggle(this)">
+                <span class="f-sev sev-pass">PASS</span>
+                <div><div class="f-name">No shared state</div><div class="f-count">All tests are isolated</div></div>
+                <span class="f-toggle">▾</span>
+              </div>
+              <div class="finding-body">
+                <div class="f-explanation">No test relies on state created by a previous test. Tests can run in any order or in parallel without unexpected failures. This is the strongest aspect of this suite.</div>
+                <div class="f-files"><span class="f-file">all files</span></div>
+                <div class="f-rec-label">Recommendation</div>
+                <div class="f-rec">Maintain this discipline strictly. Guard it in code review — it's the foundation of a reliable CI pipeline.</div>
+              </div>
+            </div>
+            <div class="finding">
+              <div class="finding-head" onclick="toggle(this)">
+                <span class="f-sev sev-warn">WARN</span>
+                <div><div class="f-name">Shared login setup</div><div class="f-count">Auth duplicated across 12 files</div></div>
+                <span class="f-toggle">▾</span>
+              </div>
+              <div class="finding-body">
+                <div class="f-explanation">Login steps are repeated inline in 12 test files rather than using a shared fixture. A change to the login flow requires updates in 12 places.</div>
+                <div class="f-files"><span class="f-file">12 files</span></div>
+                <div class="f-rec-label">Recommendation</div>
+                <div class="f-rec">Extract auth setup into a Playwright <code class="ci">storageState</code> fixture or a <code class="ci">globalSetup</code> function. Login once, reuse the session across all tests that require it.</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- DATA -->
+          <div class="cat-section" id="cat-data">
+            <div class="cat-section-head">
+              <div class="cat-section-title">Data Hygiene</div>
+              <span class="score-pill pill-a">62/100</span>
+            </div>
+            <div class="finding">
+              <div class="finding-head" onclick="toggle(this)">
+                <span class="f-sev sev-fail">FAIL</span>
+                <div><div class="f-name">Hardcoded URLs</div><div class="f-count">Staging URL in 4 files</div></div>
+                <span class="f-toggle">▾</span>
+              </div>
+              <div class="finding-body">
+                <div class="f-explanation">4 files contain hardcoded staging URLs (<code class="cf">https://staging.acme.com</code>). These tests will fail entirely in any environment where that URL is unreachable.</div>
+                <div class="f-files"><span class="f-file">payment.spec.ts</span><span class="f-file">api-calls.spec.ts</span><span class="f-file">+2 more</span></div>
+                <div class="f-rec-label">Recommendation</div>
+                <div class="f-rec">Move all base URLs into <code class="ci">playwright.config.ts</code> as the <code class="ci">baseURL</code> property, sourced from an environment variable. Test files should never contain environment-specific values.</div>
+              </div>
+            </div>
+            <div class="finding">
+              <div class="finding-head" onclick="toggle(this)">
+                <span class="f-sev sev-warn">WARN</span>
+                <div><div class="f-name">Hardcoded test data</div><div class="f-count">Values not in fixtures</div></div>
+                <span class="f-toggle">▾</span>
+              </div>
+              <div class="finding-body">
+                <div class="f-explanation">User emails, product IDs, and order amounts are hardcoded inline in multiple tests. This makes tests fragile to data changes and difficult to run across environments.</div>
+                <div class="f-files"><span class="f-file">checkout.spec.ts</span><span class="f-file">user-management.spec.ts</span></div>
+                <div class="f-rec-label">Recommendation</div>
+                <div class="f-rec">Move test data into fixture files or a factory pattern. A simple <code class="ci">fixtures/</code> directory with JSON or TypeScript data builders is enough to start.</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- FRAMEWORK -->
+          <div class="cat-section" id="cat-framework">
+            <div class="cat-section-head">
+              <div class="cat-section-title">Framework-specific · Playwright</div>
+              <span class="score-pill pill-r">45/100</span>
+            </div>
+            <div class="finding">
+              <div class="finding-head" onclick="toggle(this)">
+                <span class="f-sev sev-warn">WARN</span>
+                <div><div class="f-name">page.waitForTimeout usage</div><div class="f-count">8 arbitrary waits found</div></div>
+                <span class="f-toggle">▾</span>
+              </div>
+              <div class="finding-body">
+                <div class="f-explanation"><code class="ca">page.waitForTimeout()</code> is found in 8 tests. Arbitrary waits make tests slower and still intermittently fail if the timeout is too short. Playwright's built-in auto-waiting makes these unnecessary.</div>
+                <div class="f-files"><span class="f-file">basket.spec.ts</span><span class="f-file">checkout.spec.ts</span><span class="f-file">+4 more</span></div>
+                <div class="f-rec-label">Recommendation</div>
+                <div class="f-rec">Replace with <code class="ci">page.waitForSelector()</code>, <code class="ci">expect(locator).toBeVisible()</code>, or <code class="ci">page.waitForResponse()</code> tied to an actual event.</div>
+              </div>
+            </div>
+            <div class="finding">
+              <div class="finding-head" onclick="toggle(this)">
+                <span class="f-sev sev-warn">WARN</span>
+                <div><div class="f-name">No parallelisation config</div><div class="f-count">fullyParallel not set</div></div>
+                <span class="f-toggle">▾</span>
+              </div>
+              <div class="finding-body">
+                <div class="f-explanation"><code class="ca">fullyParallel</code> is not configured in <code class="ca">playwright.config.ts</code>. Given 187 tests with no shared state, you could likely cut CI runtime by 60–70% with minimal configuration.</div>
+                <div class="f-files"><span class="f-file">playwright.config.ts</span></div>
+                <div class="f-rec-label">Recommendation</div>
+                <div class="f-rec">Set <code class="ci">fullyParallel: true</code> and configure <code class="ci">workers</code> to match your CI runner capacity. Your test independence score makes this safe to do immediately.</div>
+              </div>
+            </div>
+            <div class="finding">
+              <div class="finding-head" onclick="toggle(this)">
+                <span class="f-sev sev-fail">FAIL</span>
+                <div><div class="f-name">Hardcoded base URL in tests</div><div class="f-count">Not using Playwright config</div></div>
+                <span class="f-toggle">▾</span>
+              </div>
+              <div class="finding-body">
+                <div class="f-explanation">URLs are hardcoded directly in test files rather than referencing the <code class="cf">baseURL</code> in <code class="cf">playwright.config.ts</code>.</div>
+                <div class="f-files"><span class="f-file">payment.spec.ts</span><span class="f-file">+3 more</span></div>
+                <div class="f-rec-label">Recommendation</div>
+                <div class="f-rec">Set <code class="ci">baseURL</code> in config, sourced from an env var. Use relative paths in tests: <code class="ci">page.goto('/checkout')</code> instead of absolute URLs.</div>
+              </div>
+            </div>
+          </div>
+
+        </div><!-- /findings -->
+      </div><!-- /report-body -->
+    </div>
+  </div>
+</div><!-- /page-report -->
+
+<div class="share-toast" id="share-toast">↗ Report URL copied to clipboard</div>
+
+<script>
+// ─── ROUTER ───
+function goTo(page) {
+  document.querySelectorAll('.app-page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  window.scrollTo(0, 0);
+
+  const navLinks = document.getElementById('nav-marketing-links');
+  const navUser = document.getElementById('nav-user');
+  const navCta = document.getElementById('nav-cta');
+  if (page === 'marketing') {
+    navLinks.style.display = 'flex';
+    navUser.classList.remove('visible');
+    navCta.style.display = 'block';
+    navCta.textContent = 'Audit your suite →';
+  } else {
+    navLinks.style.display = 'none';
+    navUser.classList.add('visible');
+    navCta.style.display = 'none';
+  }
+}
+
+// Wire up the pricing CTAs on the marketing page
+document.querySelectorAll('.pc-btn').forEach(btn => {
+  if (btn.textContent.trim() === 'Run an audit' || btn.textContent.trim() === 'Get started') {
+    btn.addEventListener('click', (e) => { e.preventDefault(); goTo('connect'); });
+  }
+});
+document.querySelectorAll('.btn-cta').forEach(btn => {
+  btn.addEventListener('click', (e) => { e.preventDefault(); goTo('connect'); });
+});
+
+// ─── CONNECT PAGE ───
+const REPOS = [
+  { name: 'acme-co / checkout-tests', meta: 'Private · Updated 2h ago', fw: 'Playwright', dir: 'e2e/' },
+  { name: 'acme-co / api-integration-tests', meta: 'Private · Updated 1d ago', fw: 'Cypress', dir: 'cypress/e2e/' },
+  { name: 'acme-co / design-system', meta: 'Public · Updated 3d ago', fw: null, dir: '' },
+  { name: 'acme-co / mobile-e2e', meta: 'Private · Updated 5d ago', fw: 'Playwright', dir: 'tests/' },
+  { name: 'acme-co / legacy-selenium-suite', meta: 'Private · Updated 2w ago', fw: null, dir: '' },
+];
+let selected = null;
+
+function simulateAuth() {
+  const prompt = document.getElementById('gh-prompt');
+  prompt.style.opacity = '0.4';
+  prompt.style.pointerEvents = 'none';
+  setTimeout(() => {
+    prompt.style.display = 'none';
+    const conn = document.getElementById('gh-connected');
+    conn.classList.add('visible');
+    document.getElementById('refresh-btn').style.opacity = '1';
+    document.getElementById('repo-placeholder').style.display = 'none';
+    document.getElementById('repo-search-row').classList.add('visible');
+    document.getElementById('repo-list').classList.add('visible');
+    stepDone(1);
+    renderRepos(REPOS);
+  }, 800);
+}
+
+function renderRepos(repos) {
+  document.getElementById('repo-list').innerHTML = repos.map((r, i) => `
+    <div class="repo-item ${selected && selected.name === r.name ? 'selected' : ''}" onclick="pickRepo(${REPOS.indexOf(r)})">
+      <div><div class="repo-name">${r.name}</div><div class="repo-meta">${r.meta}</div></div>
+      <button class="repo-pick" onclick="event.stopPropagation();pickRepo(${REPOS.indexOf(r)})">${selected && selected.name === r.name ? '✓ Selected' : 'Select'}</button>
+    </div>`).join('');
+}
+
+function filterRepos(v) {
+  renderRepos(REPOS.filter(r => r.name.toLowerCase().includes(v.toLowerCase())));
+}
+
+function pickRepo(i) {
+  selected = REPOS[i];
+  renderRepos(REPOS);
+  const fwRow = document.getElementById('fw-row');
+  const dirRow = document.getElementById('dir-row');
+  if (selected.fw) {
+    fwRow.classList.add('visible');
+    document.getElementById('fw-name').textContent = selected.fw;
+    dirRow.classList.add('visible');
+    document.getElementById('dir-input').value = selected.dir;
+    document.getElementById('run-btn').disabled = false;
+  } else {
+    fwRow.classList.remove('visible');
+    dirRow.classList.remove('visible');
+    document.getElementById('run-btn').disabled = true;
+  }
+  document.getElementById('sum-repo').textContent = selected.name.split(' / ')[1];
+  document.getElementById('sum-repo').classList.remove('empty');
+  document.getElementById('sum-fw').textContent = selected.fw || 'Not detected';
+  document.getElementById('sum-fw').className = 'sum-val' + (selected.fw ? ' ok' : ' empty');
+  document.getElementById('sum-path').textContent = selected.dir || '—';
+  document.getElementById('sum-path').classList.remove('empty');
+  document.getElementById('sum-access').textContent = 'Read-only ✓';
+  document.getElementById('sum-access').className = 'sum-val ok';
+  stepDone(2);
+}
+
+function stepDone(n) {
+  const node = document.getElementById('step-' + n);
+  const next = document.getElementById('step-' + (n + 1));
+  const line = document.getElementById('step-line-' + n);
+  if (node) { node.classList.remove('active'); node.classList.add('done'); node.querySelector('.step-circle').textContent = '✓'; }
+  if (next) next.classList.add('active');
+  if (line) line.classList.add('done');
+}
+
+// ─── PAYMENT ───
+function openPayment() {
+  if (selected) document.getElementById('modal-repo').textContent = selected.name;
+  document.getElementById('payment-modal').classList.add('open');
+}
+function closePayment() { document.getElementById('payment-modal').classList.remove('open'); }
+function fmtCard(el) { let v = el.value.replace(/\D/g,'').substring(0,16); el.value = v.replace(/(.{4})/g,'$1 ').trim(); }
+function fmtExp(el) { let v = el.value.replace(/\D/g,'').substring(0,4); if(v.length>2) v=v.substring(0,2)+' / '+v.substring(2); el.value=v; }
+
+function processPayment() {
+  closePayment();
+  stepDone(3);
+  runAnalysis();
+}
+
+// ─── ANALYSIS ───
+function runAnalysis() {
+  const ov = document.getElementById('analysis-overlay');
+  ov.classList.add('open');
+  const fill = document.getElementById('a-fill');
+  const delays = [0, 600, 1300, 2200, 3100, 4000, 4700];
+  const durations = [600, 700, 900, 900, 900, 700, 600];
+  delays.forEach((d, i) => {
+    setTimeout(() => {
+      if (i > 0) { document.getElementById('as-'+(i-1)).classList.remove('active'); document.getElementById('as-'+(i-1)).classList.add('done'); document.getElementById('as-'+(i-1)).querySelector('.a-step-icon').textContent = '✓'; }
+      document.getElementById('as-'+i).classList.add('active');
+      fill.style.width = Math.round(((i+1)/7)*100) + '%';
+    }, d);
+  });
+  setTimeout(() => {
+    document.getElementById('as-6').classList.remove('active');
+    document.getElementById('as-6').classList.add('done');
+    document.getElementById('as-6').querySelector('.a-step-icon').textContent = '✓';
+    fill.style.width = '100%';
+    setTimeout(() => {
+      ov.classList.remove('open');
+      if (selected) document.getElementById('report-repo-title').textContent = selected.name;
+      goTo('report');
+    }, 600);
+  }, 5500);
+}
+
+// ─── REPORT ───
+function toggle(head) { head.parentElement.classList.toggle('open'); }
+
+function scrollTo(id, navItem) {
+  document.getElementById(id).scrollIntoView({ behavior: 'smooth', block: 'start' });
+  document.querySelectorAll('.cat-nav-item').forEach(n => n.classList.remove('active'));
+  navItem.classList.add('active');
+}
+
+function shareReport() {
+  navigator.clipboard.writeText('https://glass.io/r/abc123').catch(() => {});
+  const t = document.getElementById('share-toast');
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+document.querySelectorAll('.cat-section').forEach(s => {
+  new IntersectionObserver(entries => {
+    if (entries[0].isIntersecting) {
+      document.querySelectorAll('.cat-nav-item').forEach(n => {
+        n.classList.toggle('active', n.getAttribute('onclick') && n.getAttribute('onclick').includes(s.id));
+      });
+    }
+  }, { threshold: 0.3, rootMargin: '-80px 0px -55% 0px' }).observe(s);
+});
+</script>
+
+</body>
+</html>
