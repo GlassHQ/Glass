@@ -10,6 +10,7 @@
     "check-types": "next typegen && tsc --noEmit"
   },
   "dependencies": {
+    "@databuddy/sdk": "^2.3.29",
     "@glass/ui": "workspace:*",
     "@phosphor-icons/react": "^2.1.10",
     "@upstash/ratelimit": "^2.0.8",
