@@ -84,3 +84,52 @@ The application is currently a **client-side only prototype** — no API routes,
 `@databuddy/sdk` is integrated in both apps at the root layout level, tracking attributes, outgoing links, interactions, and scroll depth.
 - **waitlist**: rendered inside `src/app/AppLayout.tsx`, which wraps children in `layout.tsx`
 - **application**: inlined directly in `src/app/layout.tsx`
+
+---
+
+## Implementation loop (agent instructions)
+
+When an agent is running the implement → test → fix loop, follow these rules exactly.
+
+### State file
+
+`TASKS.md` at the repo root is the single source of truth. Read it at the start of every iteration. Write to it when status changes. Never trust memory — always re-read the file.
+
+### One task per iteration
+
+1. Find the first task with status `[ ]` in `TASKS.md`
+2. If none found → print "All tasks complete" and stop looping
+3. If the first pending task has unmet dependencies (a task it `Depends on` that is not `[x]`) → mark it `[!] blocked: dependency TASK-XXX not complete` and move to the next pending task
+4. Mark the task `[~]` in `TASKS.md` before doing any work
+5. Do the work (see below)
+6. Run the test command exactly as written in the task
+7. If tests pass → mark `[x]` in `TASKS.md`
+8. If tests fail → fix and retry. Maximum **3 attempts** total. If still failing after 3, mark `[!] blocked: <one-line error summary>` and stop the iteration
+
+### How to do the work
+
+- **Write the test file first**, then write the implementation to make it pass. Never skip writing the test.
+- Read the referenced PRD and test plan sections before writing any code: `REFERENCES/application/glass-implementation-prd.md` and `REFERENCES/application/glass-test-plan.md`
+- Keep changes scoped to the files listed in the task. Do not refactor things not mentioned.
+- Run `bun run check-types` after every file change. Fix type errors before running the task's test command.
+- Use `bun test` not `npm test`. Use `bun add` not `npm install`.
+
+### Hard rules (never violate)
+
+- **Never mark a task `[x]` unless its test command actually passed in this session.** Do not assume.
+- **Never call `browser_take_screenshot`** in any code or test. This is an architectural constraint.
+- **Never leave a session in `status = 'running'`** without a corresponding cleanup path.
+- **Never expose `ANTHROPIC_API_KEY`** in any file that runs client-side.
+- When in doubt about scope, do less and mark the task complete. The next agent can extend it.
+
+### Test environment
+
+Tests that hit the database use `TEST_DATABASE_URL`. Check it is set before running integration tests:
+```sh
+test -n "$TEST_DATABASE_URL" || (echo "TEST_DATABASE_URL not set" && exit 1)
+```
+
+Run the migration against the test DB if tables don't exist:
+```sh
+psql "$TEST_DATABASE_URL" -f db/migrations/002_glass_core.sql
+```
