@@ -522,6 +522,35 @@ body {
   transform: translateY(0);
 }
 
+.waitlist-error {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  margin-top: 14px;
+  color: #f87171;
+}
+
+.theme-light .waitlist-error {
+  color: #b91c1c;
+}
+
+.theme-foil .waitlist-error {
+  color: #fecaca;
+}
+
+.theme-holo .waitlist-error {
+  color: #fca5a5;
+}
+
+.hc-inline-error {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  margin-top: 8px;
+  color: #fca5a5;
+  text-align: center;
+}
+
 @keyframes rise {
   from {
     opacity: 0;
@@ -1115,31 +1144,4 @@ body {
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
-}
-
-/* Signup + waitlist count hidden (coming-soon shell only) */
-.form,
-.count,
-.hc-row,
-.hc-count {
-  display: none;
-}
-
-/* Hero themes dark / light / foil (1, 2, 4): pull X link up under tagline */
-.theme-dark .content > .tagline,
-.theme-light .content > .tagline,
-.theme-foil .content > .tagline {
-  margin-bottom: 16px;
-}
-
-.theme-dark .content > .success,
-.theme-light .content > .success,
-.theme-foil .content > .success {
-  display: none;
-}
-
-.theme-dark .content > .social-x,
-.theme-light .content > .social-x,
-.theme-foil .content > .social-x {
-  margin-top: 10px;
 }
