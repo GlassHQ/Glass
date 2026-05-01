@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Glass — Home View</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f3; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 2rem; }
+
+  .app { display: flex; height: 680px; background: #f5f5f3; border-radius: 12px; overflow: hidden; border: 0.5px solid #e0e0da; width: 100%; max-width: 900px; box-shadow: 0 4px 24px rgba(0,0,0,0.08); }
+
+  .sidebar { width: 200px; flex-shrink: 0; background: #fff; border-right: 0.5px solid #e0e0da; display: flex; flex-direction: column; }
+  .sidebar-top { padding: 14px 16px; border-bottom: 0.5px solid #e0e0da; display: flex; align-items: center; justify-content: space-between; }
+  .logo { font-size: 15px; font-weight: 500; color: #1a1a1a; }
+  .tier-pill { font-size: 10px; padding: 2px 7px; border-radius: 20px; cursor: pointer; user-select: none; }
+  .pill-free { background: #f5f5f3; color: #888; border: 0.5px solid #d0d0ca; }
+  .pill-pro { background: #EEEDFE; color: #534AB7; border: none; }
+  .nav-section { padding: 10px 16px 4px; font-size: 11px; color: #aaa; letter-spacing: 0.06em; }
+  .nav-item { display: flex; align-items: center; gap: 8px; padding: 7px 16px; font-size: 13px; color: #666; cursor: pointer; border-left: 2px solid transparent; }
+  .nav-item:hover { background: #f5f5f3; }
+  .nav-item.active { color: #1a1a1a; border-left-color: #7F77DD; background: #f5f5f3; font-weight: 500; }
+  .nav-dot { width: 6px; height: 6px; border-radius: 50%; background: #d0d0ca; flex-shrink: 0; }
+  .nav-item.active .nav-dot { background: #7F77DD; }
+  .sidebar-bottom { margin-top: auto; padding: 12px 16px; border-top: 0.5px solid #e0e0da; }
+  .upgrade-box { background: #EEEDFE; border-radius: 8px; padding: 10px 12px; display: none; }
+  .upgrade-box.visible { display: block; }
+  .upgrade-title { font-size: 12px; font-weight: 500; color: #3C3489; margin-bottom: 4px; }
+  .upgrade-text { font-size: 11px; color: #534AB7; line-height: 1.5; margin-bottom: 8px; }
+  .upgrade-btn { font-size: 11px; background: #7F77DD; color: #fff; border: none; border-radius: 8px; padding: 5px 10px; cursor: pointer; width: 100%; }
+
+  .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  .topbar { padding: 12px 20px; background: #fff; border-bottom: 0.5px solid #e0e0da; display: flex; align-items: center; gap: 10px; }
+  .topbar-title { font-size: 14px; font-weight: 500; color: #1a1a1a; flex: 1; }
+  .btn { font-size: 12px; padding: 5px 12px; border: 0.5px solid #d0d0ca; border-radius: 8px; background: #fff; color: #666; cursor: pointer; }
+  .btn:hover { background: #f5f5f3; }
+  .btn-purple { background: #7F77DD; color: #fff; border-color: #7F77DD; }
+  .btn-purple:hover { background: #6d65c8; }
+
+  .content { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+
+  .app-card { background: #fff; border: 0.5px solid #e0e0da; border-radius: 12px; overflow: hidden; cursor: pointer; transition: border-color 0.15s; }
+  .app-card:hover { border-color: #c0c0ba; }
+  .app-card.has-alert { border-left: 3px solid #E24B4A; }
+  .app-card.has-warning { border-left: 3px solid #BA7517; }
+
+  .card-top { padding: 14px 16px; display: flex; align-items: flex-start; gap: 12px; }
+  .card-icon { width: 36px; height: 36px; border-radius: 8px; background: #f5f5f3; border: 0.5px solid #e0e0da; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 500; color: #666; flex-shrink: 0; }
+  .card-info { flex: 1; min-width: 0; }
+  .card-name { font-size: 14px; font-weight: 500; color: #1a1a1a; margin-bottom: 2px; }
+  .card-url { font-size: 11px; color: #aaa; font-family: 'SF Mono', 'Fira Code', monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .card-envs { display: flex; gap: 6px; margin-top: 6px; }
+  .env-chip { font-size: 10px; padding: 1px 7px; border-radius: 20px; border: 0.5px solid #e0e0da; color: #aaa; }
+
+  .card-signals { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 0.5px solid #e0e0da; }
+  .signal { padding: 10px 14px; border-right: 0.5px solid #e0e0da; }
+  .signal:last-child { border-right: none; }
+  .signal-label { font-size: 10px; color: #aaa; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+  .signal-value { font-size: 13px; font-weight: 500; color: #1a1a1a; }
+  .signal-sub { font-size: 11px; color: #aaa; margin-top: 1px; }
+  .signal-value.alert { color: #A32D2D; }
+  .signal-value.warning { color: #854F0B; }
+  .signal-value.ok { color: #3B6D11; }
+  .signal-value.muted { color: #aaa; }
+
+  .card-footer { padding: 10px 16px; border-top: 0.5px solid #e0e0da; background: #fafaf8; display: flex; align-items: center; gap: 8px; }
+  .schedule-info { font-size: 11px; color: #aaa; flex: 1; display: flex; align-items: center; gap: 5px; }
+  .sched-dot { width: 5px; height: 5px; border-radius: 50%; background: #639922; flex-shrink: 0; }
+  .sched-dot.off { background: #d0d0ca; }
+  .footer-actions { display: flex; gap: 6px; }
+  .btn-xs { font-size: 11px; padding: 4px 10px; border: 0.5px solid #d0d0ca; border-radius: 8px; background: #fff; color: #666; cursor: pointer; }
+  .btn-xs:hover { background: #f5f5f3; }
+  .btn-xs-purple { background: #7F77DD; color: #fff; border-color: #7F77DD; }
+  .btn-xs-purple:hover { background: #6d65c8; }
+  .pro-lock { font-size: 10px; color: #534AB7; background: #EEEDFE; padding: 2px 7px; border-radius: 20px; display: none; }
+  .pro-lock.visible { display: inline; }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="sidebar">
+    <div class="sidebar-top">
+      <div class="logo">Glass</div>
+      <span class="tier-pill pill-free" id="tier-toggle" onclick="toggleTier()">Free</span>
+    </div>
+    <div class="nav-section">Workspace</div>
+    <div class="nav-item active"><div class="nav-dot"></div>Applications</div>
+    <div class="nav-item"><div class="nav-dot"></div>Sessions</div>
+    <div class="nav-item"><div class="nav-dot"></div>Settings</div>
+    <div class="sidebar-bottom">
+      <div class="upgrade-box" id="upgrade-box">
+        <div class="upgrade-title">Upgrade to Pro</div>
+        <div class="upgrade-text">Auto-run schedules so Glass always stays current.</div>
+        <button class="upgrade-btn">See Pro plans</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-title">Applications</div>
+      <button class="btn btn-purple">+ Add application</button>
+    </div>
+
+    <div class="content">
+
+      <div class="app-card has-alert">
+        <div class="card-top">
+          <div class="card-icon">EC</div>
+          <div class="card-info">
+            <div class="card-name">my-ecommerce-app</div>
+            <div class="card-url">localhost:3000 · staging.myapp.com</div>
+            <div class="card-envs">
+              <span class="env-chip">local</span>
+              <span class="env-chip">staging</span>
+            </div>
+          </div>
+        </div>
+        <div class="card-signals">
+          <div class="signal">
+            <div class="signal-label">Last session</div>
+            <div class="signal-value warning">12 days ago</div>
+            <div class="signal-sub">local env</div>
+          </div>
+          <div class="signal">
+            <div class="signal-label">Drift</div>
+            <div class="signal-value alert">3 changes</div>
+            <div class="signal-sub">since last session</div>
+          </div>
+          <div class="signal">
+            <div class="signal-label">Risk</div>
+            <div class="signal-value alert">4 critical flows</div>
+            <div class="signal-sub">flagged by Glass</div>
+          </div>
+        </div>
+        <div class="card-footer">
+          <div class="schedule-info">
+            <div class="sched-dot off"></div>
+            <span class="free-sched">Manual run</span>
+            <span class="pro-sched" style="display:none;">Daily · 08:00</span>
+            <span class="pro-lock" id="lock-1">Pro</span>
+          </div>
+          <div class="footer-actions">
+            <button class="btn-xs">View last session</button>
+            <button class="btn-xs btn-xs-purple">Run now</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="app-card has-warning">
+        <div class="card-top">
+          <div class="card-icon">AD</div>
+          <div class="card-info">
+            <div class="card-name">admin-portal</div>
+            <div class="card-url">localhost:4000 · admin-staging.myapp.com</div>
+            <div class="card-envs">
+              <span class="env-chip">local</span>
+              <span class="env-chip">staging</span>
+            </div>
+          </div>
+        </div>
+        <div class="card-signals">
+          <div class="signal">
+            <div class="signal-label">Last session</div>
+            <div class="signal-value ok">Today, 09:41</div>
+            <div class="signal-sub">staging env</div>
+          </div>
+          <div class="signal">
+            <div class="signal-label">Drift</div>
+            <div class="signal-value muted">No changes</div>
+            <div class="signal-sub">since last session</div>
+          </div>
+          <div class="signal">
+            <div class="signal-label">Risk</div>
+            <div class="signal-value warning">2 critical flows</div>
+            <div class="signal-sub">flagged by Glass</div>
+          </div>
+        </div>
+        <div class="card-footer">
+          <div class="schedule-info">
+            <div class="sched-dot off" id="sched-dot-2"></div>
+            <span class="free-sched" id="sched-label-2">Manual run</span>
+            <span class="pro-sched" id="pro-sched-2" style="display:none;">Weekly · Mon 09:00</span>
+            <span class="pro-lock" id="lock-2">Pro</span>
+          </div>
+          <div class="footer-actions">
+            <button class="btn-xs">View last session</button>
+            <button class="btn-xs btn-xs-purple">Run now</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="app-card">
+        <div class="card-top">
+          <div class="card-icon">MB</div>
+          <div class="card-info">
+            <div class="card-name">mobile-web-app</div>
+            <div class="card-url">localhost:3001</div>
+            <div class="card-envs">
+              <span class="env-chip">local</span>
+            </div>
+          </div>
+        </div>
+        <div class="card-signals">
+          <div class="signal">
+            <div class="signal-label">Last session</div>
+            <div class="signal-value ok">Yesterday</div>
+            <div class="signal-sub">local env</div>
+          </div>
+          <div class="signal">
+            <div class="signal-label">Drift</div>
+            <div class="signal-value muted">No changes</div>
+            <div class="signal-sub">since last session</div>
+          </div>
+          <div class="signal">
+            <div class="signal-label">Risk</div>
+            <div class="signal-value ok">No critical flows</div>
+            <div class="signal-sub">all standard</div>
+          </div>
+        </div>
+        <div class="card-footer">
+          <div class="schedule-info">
+            <div class="sched-dot off" id="sched-dot-3"></div>
+            <span class="free-sched" id="sched-label-3">Manual run</span>
+            <span class="pro-sched" id="pro-sched-3" style="display:none;">Daily · 07:00</span>
+            <span class="pro-lock" id="lock-3">Pro</span>
+          </div>
+          <div class="footer-actions">
+            <button class="btn-xs">View last session</button>
+            <button class="btn-xs btn-xs-purple">Run now</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+let isPro = false;
+
+function toggleTier() {
+  isPro = !isPro;
+  const toggle = document.getElementById('tier-toggle');
+  const upgradeBox = document.getElementById('upgrade-box');
+  const locks = document.querySelectorAll('.pro-lock');
+  const freeScheds = document.querySelectorAll('.free-sched');
+  const proScheds = document.querySelectorAll('.pro-sched');
+  const schedDots = [
+    document.getElementById('sched-dot-2'),
+    document.getElementById('sched-dot-3')
+  ];
+
+  if (isPro) {
+    toggle.textContent = 'Pro';
+    toggle.className = 'tier-pill pill-pro';
+    upgradeBox.classList.remove('visible');
+    locks.forEach(l => l.classList.remove('visible'));
+    freeScheds.forEach(s => s.style.display = 'none');
+    proScheds.forEach(s => s.style.display = 'inline');
+    schedDots.forEach(d => d.classList.remove('off'));
+  } else {
+    toggle.textContent = 'Free';
+    toggle.className = 'tier-pill pill-free';
+    upgradeBox.classList.add('visible');
+    locks.forEach(l => l.classList.add('visible'));
+    freeScheds.forEach(s => s.style.display = 'inline');
+    proScheds.forEach(s => s.style.display = 'none');
+    schedDots.forEach(d => d.classList.add('off'));
+  }
+}
+
+toggleTier();
+</script>
+</body>
+</html>
