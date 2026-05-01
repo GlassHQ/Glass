@@ -1,12 +1,15 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import './glass.css'
 import {
   APPLICATIONS,
   type Application,
   type Session,
+  type SessionStatus,
+  type Feature,
   type Environment,
+  type EnvType,
 } from './mockData'
 
 // ─── Navigation state ─────────────────────────────────────────────────────────
@@ -18,6 +21,7 @@ type Screen =
   | { id: 'settings' }
   | { id: 'application'; appId: string; tab: AppTab }
   | { id: 'session'; appId: string; sessionId: string }
+  | { id: 'running-session'; appId: string; envType: EnvType }
 
 function sidebarActive(screen: Screen): 'applications' | 'settings' {
   if (screen.id === 'settings') return 'settings'
@@ -87,12 +91,14 @@ function AppCard({
   meta,
   onOpen,
   onViewLastSession,
+  onRunSession,
 }: {
   app: Application
   tier: Tier
   meta: { signals: CardSignal[]; urgency: string }
   onOpen: () => void
   onViewLastSession: () => void
+  onRunSession: () => void
 }) {
   const isPro = tier === 'pro'
   const scheduleLabel = isPro ? (PRO_SCHEDULES[app.id] ?? 'Daily · 09:00') : 'Manual run'
@@ -140,7 +146,7 @@ function AppCard({
           </button>
           <button
             className="btn-xs btn-xs-primary"
-            onClick={e => e.stopPropagation()}
+            onClick={e => { e.stopPropagation(); onRunSession() }}
           >
             Run now
           </button>
@@ -262,6 +268,7 @@ function ApplicationView({
   tab,
   onTabChange,
   onSessionClick,
+  onRunSession,
   onSave,
   onDelete,
   onBack,
@@ -270,6 +277,7 @@ function ApplicationView({
   tab: AppTab
   onTabChange: (t: AppTab) => void
   onSessionClick: (sessionId: string) => void
+  onRunSession: (envType: EnvType) => void
   onSave: (updated: Application) => void
   onDelete: () => void
   onBack: () => void
@@ -320,7 +328,12 @@ function ApplicationView({
                     Last session: {lastSession ? lastSession.startedAt : '—'}
                   </div>
                   <div className="env-card-actions">
-                    <button className="btn-xs btn-xs-primary">Run session</button>
+                    <button
+                      className="btn-xs btn-xs-primary"
+                      onClick={() => onRunSession(env.type)}
+                    >
+                      Run session
+                    </button>
                   </div>
                 </div>
               )
@@ -585,6 +598,287 @@ const EMPTY_SIGNALS: { signals: CardSignal[]; urgency: string } = {
   ],
 }
 
+// ─── Run session helpers ──────────────────────────────────────────────────────
+
+function formatDisplayDate(d: Date): string {
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+  const hh = d.getHours().toString().padStart(2, '0')
+  const mm = d.getMinutes().toString().padStart(2, '0')
+  return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}, ${hh}:${mm}`
+}
+
+function formatElapsed(seconds: number): string {
+  const m = Math.floor(seconds / 60)
+  const s = seconds % 60
+  return `${m}m ${s.toString().padStart(2, '0')}s`
+}
+
+interface RunPlan {
+  features: Feature[]
+  willFail: boolean
+  failAtIdx: number
+  failReason: string
+  totalTokens: number
+  totalPages: number
+}
+
+const FAIL_REASONS = [
+  'Agent encountered an authentication wall it could not navigate past',
+  'Element interaction failed — the target element was not reachable via the accessibility tree',
+  'Network timeout occurred while waiting for the page to load after form submission',
+  'An unexpected dialog blocked further page navigation',
+  'A JavaScript exception prevented the page from completing its render cycle',
+]
+
+function buildRunPlan(app: Application, _envType: EnvType): RunPlan {
+  const source = app.sessions[0]
+  const allFeatures: Feature[] = source?.features ?? []
+
+  if (allFeatures.length === 0) {
+    return { features: [], willFail: false, failAtIdx: 0, failReason: '', totalTokens: 0, totalPages: 0 }
+  }
+
+  const count = Math.max(2, Math.round(allFeatures.length * (0.6 + Math.random() * 0.4)))
+  const features = [...allFeatures].sort(() => Math.random() - 0.5).slice(0, count)
+
+  const willFail = Math.random() < 0.3
+  const failAtIdx = willFail ? 1 + Math.floor(Math.random() * Math.max(1, features.length - 1)) : features.length
+  const failReason = FAIL_REASONS[Math.floor(Math.random() * FAIL_REASONS.length)]
+  const covered = willFail ? failAtIdx : features.length
+  const totalTokens = Math.floor(covered * (1300 + Math.random() * 1100))
+  const totalPages = Math.floor(covered * (1.2 + Math.random() * 0.8))
+
+  return { features, willFail, failAtIdx, failReason, totalTokens, totalPages }
+}
+
+function generateNarrative(
+  appName: string,
+  features: Feature[],
+  phase: 'done' | 'failed' | 'stopped',
+  plan: RunPlan,
+): string {
+  const flowCount = features.flatMap(f => f.flows).length
+  const criticalCount = features.flatMap(f => f.flows).filter(f => f.risk === 'critical').length
+  const criticalFeatures = features.filter(f => f.flows.some(fl => fl.risk === 'critical')).map(f => f.name)
+  const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`
+
+  if (phase === 'failed') {
+    const remaining = plan.features.length - features.length
+    return `Session terminated after ${plural(features.length, 'feature area')} were explored. ${plan.failReason}. The features mapped prior to the failure completed without issues. Resolve the blocking condition and re-run to cover the remaining ${plural(remaining, 'feature area')}.`
+  }
+
+  if (phase === 'stopped') {
+    return `Session was manually stopped after exploring ${plural(features.length, 'feature area')} and ${plural(flowCount, 'flow')}. ${criticalCount > 0 ? `${plural(criticalCount, 'critical flow')} ${criticalCount === 1 ? 'was' : 'were'} identified in ${criticalFeatures.slice(0, 2).join(' and ')} before the session ended. ` : 'No critical flows were identified in the explored areas. '}Re-run the session to complete coverage of all feature areas.`
+  }
+
+  const variants = [
+    `Glass completed a full sweep of ${appName} across ${plural(features.length, 'feature area')} and ${plural(flowCount, 'flow')} over ${plan.totalPages} pages. ${criticalCount > 0 ? `${plural(criticalCount, 'critical flow')} were identified — ${criticalFeatures.slice(0, 2).join(' and ')} warrant attention before the next deployment. ` : 'All flows mapped at standard risk — no critical paths detected. '}The application navigated end-to-end without blocking errors.`,
+
+    `${appName} was explored across ${plural(features.length, 'feature area')} in this session. Glass visited ${plan.totalPages} pages and mapped ${plural(flowCount, 'flow')}. ${criticalCount > 0 ? `The ${plural(criticalCount, 'critical flow')} in ${criticalFeatures[0]} should be reviewed against the latest test coverage. ` : 'Risk profile is clean — no critical flows in this run. '}No navigation failures or unexpected states were observed.`,
+
+    `Session completed successfully across all ${plural(features.length, 'targeted feature')}. Glass mapped ${plan.totalPages} pages and ${plural(flowCount, 'flow')} without encountering any blocking conditions. ${criticalCount > 0 ? `${plural(criticalCount, 'flow')} carrying critical risk ${criticalCount === 1 ? 'was' : 'were'} identified — recommend review before the next release. ` : 'No critical flows were flagged in this session. '}The application appears stable relative to the previous session.`,
+  ]
+
+  return variants[Math.floor(Math.random() * variants.length)]
+}
+
+// ─── Run session view ─────────────────────────────────────────────────────────
+
+type RunPhase = 'connecting' | 'discovering' | 'exploring' | 'done' | 'failed' | 'stopped'
+
+function getFeatureState(
+  i: number,
+  phase: RunPhase,
+  featureIdx: number,
+  plan: RunPlan,
+): 'done' | 'active' | 'failed' | 'skipped' | 'upcoming' {
+  if (phase === 'done') return 'done'
+  if (phase === 'failed') {
+    if (i < plan.failAtIdx) return 'done'
+    if (i === plan.failAtIdx) return 'failed'
+    return 'skipped'
+  }
+  if (phase === 'stopped') {
+    return i < featureIdx ? 'done' : 'skipped'
+  }
+  if (i < featureIdx) return 'done'
+  if (i === featureIdx) return 'active'
+  return 'upcoming'
+}
+
+function RunningSessionView({
+  app,
+  envType,
+  onComplete,
+  onBack,
+}: {
+  app: Application
+  envType: EnvType
+  onComplete: (session: Session) => void
+  onBack: () => void
+}) {
+  const [plan] = useState<RunPlan>(() => buildRunPlan(app, envType))
+  const [phase, setPhase] = useState<RunPhase>('connecting')
+  const [featureIdx, setFeatureIdx] = useState(0)
+  const [elapsed, setElapsed] = useState(0)
+  const [completedSession, setCompletedSession] = useState<Session | null>(null)
+  const startTimeRef = useRef(new Date())
+
+  useEffect(() => {
+    const t = setInterval(() => setElapsed(e => e + 1), 1000)
+    return () => clearInterval(t)
+  }, [])
+
+  useEffect(() => {
+    if (phase === 'done' || phase === 'failed' || phase === 'stopped') return
+
+    const delay =
+      phase === 'connecting' ? 1000 :
+      phase === 'discovering' ? 800 :
+      1400 + Math.random() * 600
+
+    const t = setTimeout(() => {
+      if (phase === 'connecting') {
+        setPhase('discovering')
+      } else if (phase === 'discovering') {
+        setPhase('exploring')
+        setFeatureIdx(0)
+      } else {
+        if (plan.willFail && featureIdx === plan.failAtIdx) {
+          setPhase('failed')
+        } else if (featureIdx + 1 >= plan.features.length) {
+          setPhase('done')
+        } else {
+          setFeatureIdx(i => i + 1)
+        }
+      }
+    }, delay)
+
+    return () => clearTimeout(t)
+  }, [phase, featureIdx, plan])
+
+  useEffect(() => {
+    if (phase !== 'done' && phase !== 'failed' && phase !== 'stopped') return
+
+    const now = new Date()
+    const coveredFeatures =
+      phase === 'done' ? plan.features :
+      phase === 'failed' ? plan.features.slice(0, plan.failAtIdx) :
+      plan.features.slice(0, featureIdx)
+
+    const ratio = plan.features.length > 0 ? coveredFeatures.length / plan.features.length : 0
+    const status: SessionStatus = phase === 'done' ? 'completed' : phase === 'failed' ? 'failed' : 'stopped'
+
+    setCompletedSession({
+      id: `s-${app.id}-${Date.now()}`,
+      appId: app.id,
+      envType,
+      status,
+      startedAt: formatDisplayDate(startTimeRef.current),
+      completedAt: formatDisplayDate(now),
+      isoDate: startTimeRef.current.toISOString(),
+      tokenCount: Math.max(0, Math.round(plan.totalTokens * ratio)),
+      featureCount: coveredFeatures.length,
+      pageCount: Math.max(0, Math.round(plan.totalPages * ratio)),
+      narrative: generateNarrative(app.name, coveredFeatures, phase as 'done' | 'failed' | 'stopped', plan),
+      features: coveredFeatures,
+    })
+  }, [phase, featureIdx, app, envType, plan])
+
+  const envUrl = app.environments.find(e => e.type === envType)?.url ?? envType
+  const isRunning = phase === 'connecting' || phase === 'discovering' || phase === 'exploring'
+  const showFeatureList = phase !== 'connecting' && phase !== 'discovering'
+
+  const headerTitle =
+    phase === 'connecting' ? `Connecting to ${envUrl}…` :
+    phase === 'discovering' ? 'Mapping application structure…' :
+    phase === 'exploring' ? `Exploring ${plan.features[featureIdx]?.name ?? ''}…` :
+    phase === 'done' ? 'Session complete' :
+    phase === 'failed' ? 'Session failed' :
+    'Session stopped'
+
+  return (
+    <>
+      <div className="topbar">
+        <button className="btn-back" onClick={onBack}>← {app.name}</button>
+        <div className="topbar-session-meta">
+          <span className={`env-chip ${envType}`}>{envType}</span>
+          {isRunning && <span className="run-status-badge">running</span>}
+          {!isRunning && <span className={`session-status ${phase === 'done' ? 'completed' : phase}`}>{phase === 'done' ? 'completed' : phase}</span>}
+        </div>
+      </div>
+
+      <div className="content">
+        <div className="run-progress-card">
+          <div className="run-progress-header">
+            <span className="run-progress-title">{headerTitle}</span>
+            <span className="run-elapsed">{formatElapsed(elapsed)}</span>
+          </div>
+
+          {!showFeatureList && (
+            <div className="run-init-row">
+              <span className="run-spinner" />
+              <span className="run-init-label">
+                {phase === 'connecting' ? `Reaching ${envUrl}` : 'Scanning routes and entry points'}
+              </span>
+            </div>
+          )}
+
+          {showFeatureList && plan.features.length > 0 && (
+            <div className="run-feature-list">
+              {plan.features.map((feature, i) => {
+                const state = getFeatureState(i, phase, featureIdx, plan)
+                const criticals = feature.flows.filter(f => f.risk === 'critical').length
+                return (
+                  <div key={i} className={`run-feature ${state}`}>
+                    {state === 'active'
+                      ? <span className="run-feature-spin" />
+                      : <span className="run-feature-icon">
+                          {state === 'done' ? '✓' : state === 'failed' ? '✗' : '○'}
+                        </span>
+                    }
+                    <span className="run-feature-name">{feature.name}</span>
+                    <span className="run-feature-right">
+                      {state === 'done' && (
+                        <>
+                          {criticals > 0 && <span className="run-feature-critical">{criticals} critical</span>}
+                          <span className="run-feature-count">{feature.flows.length} flows</span>
+                        </>
+                      )}
+                      {state === 'active' && <span className="run-feature-exploring">exploring…</span>}
+                      {state === 'failed' && <span className="run-feature-error">failed</span>}
+                      {state === 'skipped' && <span className="run-feature-skipped">skipped</span>}
+                      {state === 'upcoming' && <span className="run-feature-queued">{feature.flows.length} flows</span>}
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+
+          {phase === 'failed' && (
+            <div className="run-error-note">
+              <span className="run-error-icon">!</span>
+              <span>{plan.failReason}</span>
+            </div>
+          )}
+        </div>
+
+        <div className="run-actions">
+          {isRunning && (
+            <button className="btn" onClick={() => setPhase('stopped')}>Stop session</button>
+          )}
+          {completedSession && (
+            <button className="btn btn-primary" onClick={() => onComplete(completedSession)}>
+              View results →
+            </button>
+          )}
+        </div>
+      </div>
+    </>
+  )
+}
+
 // ─── Add application modal ────────────────────────────────────────────────────
 
 function AddApplicationModal({
@@ -709,6 +1003,8 @@ export default function ApplicationHome() {
   function goBack() {
     if (screen.id === 'session') {
       setScreen({ id: 'application', appId: screen.appId, tab: 'sessions' })
+    } else if (screen.id === 'running-session') {
+      setScreen({ id: 'application', appId: screen.appId, tab: 'environments' })
     } else if (screen.id === 'application') {
       setScreen({ id: 'applications' })
     }
@@ -728,6 +1024,21 @@ export default function ApplicationHome() {
     setApps(prev => prev.filter(a => a.id !== appId))
     setSignalsMap(prev => { const next = { ...prev }; delete next[appId]; return next })
     setScreen({ id: 'applications' })
+  }
+
+  function goToRunSession(appId: string, envType: EnvType) {
+    setScreen({ id: 'running-session', appId, envType })
+  }
+
+  function handleRunComplete(session: Session) {
+    setApps(prev => prev.map(a => {
+      if (a.id !== session.appId) return a
+      const environments = a.environments.map(e =>
+        e.type === session.envType ? { ...e, lastSessionId: session.id } : e
+      )
+      return { ...a, environments, sessions: [session, ...a.sessions] }
+    }))
+    goToSession(session.appId, session.id)
   }
 
   return (
@@ -789,6 +1100,10 @@ export default function ApplicationHome() {
                         ? goToSession(app.id, lastSession.id)
                         : goToApp(app.id, 'sessions')
                     }
+                    onRunSession={() => {
+                      const env = app.environments.find(e => e.type === 'local') ?? app.environments[0]
+                      if (env) goToRunSession(app.id, env.type)
+                    }}
                   />
                 )
               })}
@@ -805,6 +1120,7 @@ export default function ApplicationHome() {
               tab={screen.tab}
               onTabChange={tab => setScreen({ ...screen, tab })}
               onSessionClick={sid => goToSession(app.id, sid)}
+              onRunSession={envType => goToRunSession(app.id, envType)}
               onSave={handleSaveApp}
               onDelete={() => handleDeleteApp(app.id)}
               onBack={goBack}
@@ -820,6 +1136,19 @@ export default function ApplicationHome() {
             <SessionResultView
               session={session}
               appName={app.name}
+              onBack={goBack}
+            />
+          )
+        })()}
+
+        {screen.id === 'running-session' && (() => {
+          const app = findApp(screen.appId)
+          if (!app) return null
+          return (
+            <RunningSessionView
+              app={app}
+              envType={screen.envType}
+              onComplete={handleRunComplete}
               onBack={goBack}
             />
           )
